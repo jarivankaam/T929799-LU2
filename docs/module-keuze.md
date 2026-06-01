@@ -22,7 +22,7 @@ De REST-module fungeert als de primaire ingang van het OpenMRS-ecosysteem.
 * **Concentratie van Security-Mechanismen:** Doordat alle verzoeken hier binnenkomen, komen de belangrijkste security-vulnerabilities in deze module naar voren. Dit maakt het een uiterst relevant en leerzaam object voor security code reviews en penetratietesten.
 
 ### 2.3 Relevantie voor NEN-7510 Compliance & Wetgeving
-Binnen de Nederlandse gezondheidszorg is naleving van de **NEN-7510:2024** norm wettelijk verplicht. De webservices.rest-module is bij goed geschikt om te toetsen aan deze norm, omdat de volgende kernaspecten hierin samenkomen en geconcentreerd zijn:
+Binnen de Nederlandse gezondheidszorg is naleving van de **NEN-7510:2024** norm wettelijk verplicht. De webservices.rest-module is goed geschikt om te toetsen aan deze norm, omdat de volgende kernaspecten hierin samenkomen en geconcentreerd zijn:
 1.  **Authenticatie & Autorisatie (NEN-7510 Control 9 - Toegangsbeveiliging):** De REST-endpoints bepalen wie toegang krijgt en welke specifieke resources een gebruiker mag inzien of wijzigen. Een zwakte hierin leidt direct tot datalekken.
 2.  **Data-Exposure (NEN-7510 Control 12 - Beveiliging van de bedrijfsvoering / Cryptografie)**
 3.  **Toegangscontrole & Logging (NEN-7510 Control 12.4 - Logging en monitoring)**
