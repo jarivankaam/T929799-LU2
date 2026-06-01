@@ -51,5 +51,3 @@
 | A.8.3 Toegangsbeveiliging | Gedeeltelijk |
 | A.8.5 Authenticatie | Gedeeltelijk |
 | A.8.15 Logging | Grotendeels afwezig |
-
-*Bevindingen gebaseerd op statische code-analyse. Opgesteld als onderdeel van een schoolproject.*
