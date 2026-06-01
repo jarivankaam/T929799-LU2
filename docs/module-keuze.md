@@ -3,7 +3,7 @@
 ## 1. Algemene Gegevens van de Module
 
 * **Modulenaam:** OpenMRS Web Services REST Module
-* **Gekozen Versie:** v2.x / Legacy-versie 
+* **Gekozen Versie:** v2.x / Legacy-versie
 * **Broncode Locatie:** [OpenMRS Web Services REST GitHub Repository](https://github.com/openmrs/openmrs-module-webservices.rest)
 * **Doel van de Module:** Deze module stelt de core-functionaliteit van OpenMRS (patiëntgegevens, medische dossiers, observaties, encounters) beschikbaar via een RESTful API. Het vormt de cruciale brug tussen de backend-database en moderne frontend-applicaties, mobiele apps en externe zorgsystemen.
 
