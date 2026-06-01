@@ -12,7 +12,7 @@
 De keuze voor de webservices.rest-module is gemaakt op basis van drie zaken: technische complexiteit, de strategische scope binnen de architectuur en de directe impact op informatiebeveiliging in de zorg.
 
 ### 2.1 Hoge Technische Complexiteit
-Tijdens onze verkenning viel de hoge mate van complexiteit direct op. Dit sluit perfect aan bij de eisen van LU 2:
+Tijdens onze verkenning viel de hoge mate van complexiteit direct op. Dit sluit perfect aan bij de eisen van LU2:
 * **Complexe Object-Mapping:** De module moet complexe, diep geneste Java-domeinmodellen van OpenMRS dynamisch converteren naar JSON/XML-representaties en vice versa.
 * **Uitgebreide Reflectie en Subclassing:** Er wordt intensief gebruikgemaakt van custom serializers, deserializers en reflectie, wat de leesbaarheid en onderhoudbaarheid bemoeilijkt. Dit biedt een uitstekend fundament voor een gestructureerd software-assessment op onderhoudbaarheid, refactoring-patronen en het bouwen van een Proof of Concept (PoC).
 
