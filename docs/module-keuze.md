@@ -29,7 +29,7 @@ Binnen de Nederlandse gezondheidszorg is naleving van de **NEN-7510:2024** norm 
 
 ## 3. Verwachte Aanpak binnen de SDLC
 
-Voor nu verwachten wij dat we ons aan de volgende stappen te houden binnen de SDLC van LU2:
+Voor nu verwachten wij dat we ons aan de volgende stappen zullen houden binnen de SDLC van LU2:
 
 ```
 [ Software Assessment ] ---> [ SBOM & CVE Analyse ] ---> [ Penetration Testing (Pre-fix) ]
