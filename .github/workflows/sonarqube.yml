@@ -34,3 +34,11 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=jarivankaam_T929799-LU2
+      - name: Generate SBOM
+        run: mvn -B org.cyclonedx:cyclonedx-maven-plugin:generateBom
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: sbom
+          path: target/bom.xml
+          retention-days: 90
