@@ -1,7 +1,6 @@
 # Gap-analyse — NEN-7510:2024-2
 **Module:** `openmrs-module-webservices.rest`  
 **Datum:** 2026-06-01  
-**Auteur:** [Jouw naam]
 
 ---
 
