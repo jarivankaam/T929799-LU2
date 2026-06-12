@@ -10,6 +10,7 @@
 package org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs2_0;
 
 import org.apache.commons.lang3.StringUtils;
+import org.openmrs.annotation.Authorized;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.module.webservices.rest.web.RestConstants;
@@ -18,6 +19,7 @@ import org.openmrs.module.webservices.rest.web.api.RestService;
 import org.openmrs.module.webservices.rest.web.resource.api.Resource;
 import org.openmrs.module.webservices.rest.web.resource.impl.BaseDelegatingResource;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
+import org.openmrs.util.PrivilegeConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +34,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Controller("webservices.rest.searchIndexController2_0")
 @RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/searchindexupdate", method = RequestMethod.POST)
+@Authorized({PrivilegeConstants.MANAGE_SEARCH_INDEX, PrivilegeConstants.VIEW_ADMIN_FUNCTIONS})
 public class SearchIndexController2_0 extends BaseRestController {
 	
 	private static final Logger log = LoggerFactory.getLogger(SearchIndexController2_0.class);
@@ -41,6 +44,7 @@ public class SearchIndexController2_0 extends BaseRestController {
 	
 	@RequestMapping
 	@ResponseStatus(HttpStatus.NO_CONTENT)
+	@Authorized({PrivilegeConstants.MANAGE_SEARCH_INDEX, PrivilegeConstants.VIEW_ADMIN_FUNCTIONS})
 	public void updateSearchIndex(@RequestBody(required = false) String json) throws Exception {
 		String resourceName = null;
 		String subResourceName = null;
@@ -79,7 +83,6 @@ public class SearchIndexController2_0 extends BaseRestController {
 				Context.updateSearchIndexForType(supportedClass);
 			} else {
 				log.debug("Updating search index via REST for resource: {} with uuid: {}", resourceName, uuid);
-				
 				Object object = ((BaseDelegatingResource) resource).getByUniqueId(uuid);
 				Context.updateSearchIndexForObject(object);
 			}
