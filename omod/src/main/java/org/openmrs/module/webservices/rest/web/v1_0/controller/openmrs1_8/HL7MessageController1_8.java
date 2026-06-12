@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
+import org.openmrs.annotation.Authorized;
 import org.openmrs.api.context.Context;
 import org.openmrs.hl7.HL7Source;
 import org.openmrs.module.webservices.rest.SimpleObject;
@@ -28,6 +29,7 @@ import org.openmrs.module.webservices.rest.web.response.ResponseException;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.MainResourceController;
 import org.openmrs.module.webservices.rest.web.v1_0.resource.openmrs1_8.HL7MessageResource1_8;
+import org.openmrs.util.PrivilegeConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
@@ -57,6 +59,7 @@ public class HL7MessageController1_8 extends BaseRestController {
 	
 	@RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/hl7", method = RequestMethod.POST)
 	@ResponseBody
+	@Authorized({PrivilegeConstants.MANAGE_HL7_MESSAGES})
 	public Object create(@RequestBody String hl7, HttpServletRequest request, HttpServletResponse response)
 	        throws ResponseException, JsonParseException, JsonMappingException, IOException {
 		RequestContext context = RestUtil.getRequestContext(request, response);
@@ -104,6 +107,7 @@ public class HL7MessageController1_8 extends BaseRestController {
 	 */
 	@RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/hl7", method = RequestMethod.GET)
 	@ResponseBody
+	@Authorized({PrivilegeConstants.GET_HL7_SOURCE})
 	public SimpleObject get(HttpServletRequest request, HttpServletResponse response) throws ResponseException {
 		return mainResourceController.get("hl7", request, response);
 	}

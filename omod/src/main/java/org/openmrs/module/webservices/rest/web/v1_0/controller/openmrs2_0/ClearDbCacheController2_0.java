@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.hibernate.SessionFactory;
 import org.openmrs.OpenmrsObject;
 import org.openmrs.User;
+import org.openmrs.annotation.Authorized;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.module.webservices.rest.web.RestConstants;
@@ -21,6 +22,7 @@ import org.openmrs.module.webservices.rest.web.api.RestService;
 import org.openmrs.module.webservices.rest.web.resource.api.Resource;
 import org.openmrs.module.webservices.rest.web.resource.impl.BaseDelegatingResource;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
+import org.openmrs.util.PrivilegeConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +37,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Controller("webservices.rest.DbCacheController")
 @RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/cleardbcache", method = RequestMethod.POST)
+@Authorized({PrivilegeConstants.VIEW_ADMIN_FUNCTIONS})
 public class ClearDbCacheController2_0 extends BaseRestController {
 	
 	private static final Logger log = LoggerFactory.getLogger(ClearDbCacheController2_0.class);
