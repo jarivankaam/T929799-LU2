@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: org.openmrs.module.webservices.rest.web.v1_0.resource.openmrs2_8.ProviderRoleController2_8Test
+-------------------------------------------------------------------------------
+Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.165 s -- in org.openmrs.module.webservices.rest.web.v1_0.resource.openmrs2_8.ProviderRoleController2_8Test

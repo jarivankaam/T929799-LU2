@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_8.RoleController1_8Test
+-------------------------------------------------------------------------------
+Tests run: 13, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.258 s -- in org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_8.RoleController1_8Test
