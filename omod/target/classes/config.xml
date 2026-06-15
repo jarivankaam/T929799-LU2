@@ -6,7 +6,7 @@
 	<!-- Base Module Properties -->
 	<id>webservices.rest</id>
 	<name>Rest Web Services OMOD</name>
-	<version>3.2.0.214974</version>
+	<version>3.2.0.3b3cd2</version>
 	<package>org.openmrs.module.webservices.rest</package>
 	<author>OpenMRS</author>
 	<description>
