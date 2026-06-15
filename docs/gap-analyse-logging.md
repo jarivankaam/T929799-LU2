@@ -33,7 +33,7 @@
 
 | Event | Endpoint | Dreiging | Gelogd? | Log-niveau | Gevoelige data | Compliant A.8.15? |
 |-------|----------|----------|---------|------------|----------------|-------------------|
-| Mislukte inlogpoging | `POST /session` | T7 (Brute force) | Ja | DEBUG (onzichtbaar) | Nee | Non-compliant |
+| Mislukte inlogpoging | `POST /session` | T7 | Ja | DEBUG (onzichtbaar) | Nee | Non-compliant |
 | Geslaagde inlogpoging | `POST /session` | — | Ja | DEBUG (onzichtbaar) | Nee | Non-compliant |
 | Uitloggen | `DELETE /session` | — | Nee | — | Nee | Non-compliant |
 | 403 Forbidden | Alle beveiligde endpoints | T2, T9 | Nee | — | Nee | Non-compliant |
