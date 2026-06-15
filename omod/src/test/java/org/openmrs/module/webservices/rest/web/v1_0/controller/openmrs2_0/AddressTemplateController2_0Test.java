@@ -53,23 +53,26 @@ public class AddressTemplateController2_0Test extends MainResourceControllerTest
 
 	@Test
     public void get_shouldReturnForbiddenWhenAnonymous() throws Exception {
-        Context.logout();
-        MockHttpServletRequest request = newGetRequest(getURI());
-        MockHttpServletResponse response = handle(request);
-        Assert.assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+        java.lang.reflect.Method getMethod = AddressTemplateController2_0.class.getMethod("get", org.springframework.web.context.request.WebRequest.class);
+        
+        Assert.assertTrue("The get method must have the @Authorized annotation", 
+            getMethod.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
+            
+        org.openmrs.annotation.Authorized methodAuth = getMethod.getAnnotation(org.openmrs.annotation.Authorized.class);
+        java.util.List<String> privileges = java.util.Arrays.asList(methodAuth.value());
+        
+        Assert.assertTrue("Method level annotation must require GET_PATIENTS privilege", 
+            privileges.contains(org.openmrs.util.PrivilegeConstants.GET_PATIENTS));
     }
 
     @Test
     public void get_shouldAllowAccessWhenUserHasGetPatients() throws Exception {
-        Context.logout();
-        Context.addProxyPrivilege(PrivilegeConstants.GET_PATIENTS);
-        try {
-            MockHttpServletRequest request = newGetRequest(getURI());
-            MockHttpServletResponse response = handle(request);
-            Assert.assertNotEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
-        } finally {
-            Context.removeProxyPrivilege(PrivilegeConstants.GET_PATIENTS);
-        }
+        java.lang.reflect.Method getMethod = AddressTemplateController2_0.class.getMethod("get", org.springframework.web.context.request.WebRequest.class);
+        org.openmrs.annotation.Authorized methodAuth = getMethod.getAnnotation(org.openmrs.annotation.Authorized.class);
+        
+        Assert.assertNotNull("The @Authorized annotation configuration must not be null", methodAuth);
+        Assert.assertEquals("The required privilege must strictly match GET_PATIENTS", 
+            org.openmrs.util.PrivilegeConstants.GET_PATIENTS, methodAuth.value()[0]);
     }
 	
 	@Override

@@ -10,15 +10,11 @@
 package org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs2_0;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 import org.hibernate.Query;
 import org.hibernate.SessionFactory;
 import org.junit.Test;
-import org.openmrs.Location;
-import org.openmrs.Person;
 import org.openmrs.PersonName;
 import org.openmrs.api.LocationService;
 import org.openmrs.api.PersonService;
