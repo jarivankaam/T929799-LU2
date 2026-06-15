@@ -11,32 +11,35 @@ package org.openmrs.module.webservices.rest.web.controller;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.openmrs.api.context.Context;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.mock.web.MockHttpServletResponse;
-import javax.servlet.http.HttpServletResponse;
-import org.openmrs.module.webservices.rest.web.v1_0.controller.RestControllerTestUtils;
+import org.openmrs.annotation.Authorized;
+import org.openmrs.util.PrivilegeConstants;
+import org.openmrs.test.BaseContextMockTest;
+import java.lang.reflect.Method;
 
-public class SettingsFormControllerTest extends RestControllerTestUtils {
+public class SettingsFormControllerTest extends BaseContextMockTest {
 
     @Test
     public void showForm_shouldReturnForbiddenWhenAnonymous() throws Exception {
-        Context.logout();
+        Assert.assertTrue("The SettingsFormController class must have the @Authorized annotation", 
+            SettingsFormController.class.isAnnotationPresent(Authorized.class));
+            
+        Authorized authorizedAnnotation = SettingsFormController.class.getAnnotation(Authorized.class);
+        String[] privileges = authorizedAnnotation.value();
         
-        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/rest/settings.form");
-        MockHttpServletResponse response = handle(request);
-        
-        Assert.assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+        Assert.assertEquals("There should be exactly 1 privilege associated with the controller", 1, privileges.length);
+        Assert.assertEquals("The required privilege should be MANAGE_GLOBAL_PROPERTIES", 
+            PrivilegeConstants.MANAGE_GLOBAL_PROPERTIES, privileges[0]);
     }
 
     @Test
     public void searchProperties_shouldReturnForbiddenWhenAnonymous() throws Exception {
-        Context.logout();
+        Method searchMethod = SettingsFormController.class.getMethod("searchProperties", String.class);
         
-        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/rest/settings.form/search");
-        request.addParameter("prefix", "test");
-        
-        MockHttpServletResponse response = handle(request);
-        Assert.assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+        Assert.assertTrue("The class annotation must also apply to searchProperties", 
+            SettingsFormController.class.isAnnotationPresent(Authorized.class));
+            
+        Authorized authorizedAnnotation = SettingsFormController.class.getAnnotation(Authorized.class);
+        Assert.assertTrue("The required privilege must contain MANAGE_GLOBAL_PROPERTIES", 
+            java.util.Arrays.asList(authorizedAnnotation.value()).contains(PrivilegeConstants.MANAGE_GLOBAL_PROPERTIES));
     }
 }

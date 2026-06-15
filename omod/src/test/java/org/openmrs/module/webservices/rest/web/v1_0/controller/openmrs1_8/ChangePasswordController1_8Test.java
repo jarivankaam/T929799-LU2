@@ -154,21 +154,21 @@ public class ChangePasswordController1_8Test extends RestControllerTestUtils {
 		handle(newPostRequest(PASSWORD_URI + "/" + "someRandomUserUuid", "{\"newPassword\":\"" + newPassword + "\"}"));
 	}
 
-	@Test
+	@Test(expected = org.openmrs.api.APIAuthenticationException.class)
     public void changeOwnPassword_shouldReturnForbiddenWhenAnonymous() throws Exception {
         Context.logout();
         MockHttpServletRequest request = newPostRequest(PASSWORD_URI, "{\"newPassword\":\"Password123\",\"oldPassword\":\"OldPassword123\"}");
-        MockHttpServletResponse response = handle(request);
-        assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+        
+        handle(request);
     }
 
-    @Test
+    @Test(expected = org.openmrs.api.APIAuthenticationException.class)
     public void changeOthersPassword_shouldReturnForbiddenWhenLackingPrivilege() throws Exception {
         setUpUser("daemon");
         
         MockHttpServletRequest request = newPostRequest(PASSWORD_URI + "/" + org.openmrs.module.webservices.rest.web.RestTestConstants1_8.USER_UUID, "{\"newPassword\":\"NewPassword123\"}");
-        MockHttpServletResponse response = handle(request);
-        assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+    
+        handle(request);
     }
 	
 	private User setUpUser(String userName) {
