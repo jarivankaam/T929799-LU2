@@ -20,6 +20,10 @@ import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.MainResourceControllerTest;
 import org.openmrs.util.OpenmrsConstants;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.openmrs.api.context.Context;
+import org.openmrs.util.PrivilegeConstants;
+import org.springframework.mock.web.MockHttpServletResponse;
+import javax.servlet.http.HttpServletResponse;
 
 public class AddressTemplateController2_0Test extends MainResourceControllerTest {
 
@@ -46,6 +50,27 @@ public class AddressTemplateController2_0Test extends MainResourceControllerTest
 		}
 		Assert.assertThat(result, Matchers.is(SimpleObject.parseJson(json)));
 	}
+
+	@Test
+    public void get_shouldReturnForbiddenWhenAnonymous() throws Exception {
+        Context.logout();
+        MockHttpServletRequest request = newGetRequest(getURI());
+        MockHttpServletResponse response = handle(request);
+        Assert.assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+    }
+
+    @Test
+    public void get_shouldAllowAccessWhenUserHasGetPatients() throws Exception {
+        Context.logout();
+        Context.addProxyPrivilege(PrivilegeConstants.GET_PATIENTS);
+        try {
+            MockHttpServletRequest request = newGetRequest(getURI());
+            MockHttpServletResponse response = handle(request);
+            Assert.assertNotEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+        } finally {
+            Context.removeProxyPrivilege(PrivilegeConstants.GET_PATIENTS);
+        }
+    }
 	
 	@Override
 	public String getUuid() {
