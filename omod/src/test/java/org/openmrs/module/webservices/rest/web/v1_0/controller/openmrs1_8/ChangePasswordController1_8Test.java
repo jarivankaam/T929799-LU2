@@ -29,7 +29,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 public class ChangePasswordController1_8Test extends RestControllerTestUtils {
 	
