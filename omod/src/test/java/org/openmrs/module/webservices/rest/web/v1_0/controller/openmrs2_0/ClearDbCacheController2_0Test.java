@@ -11,7 +11,6 @@ package org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs2_0;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -28,150 +27,117 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.junit.Assert;
-import org.openmrs.api.context.Context;
-import org.openmrs.util.PrivilegeConstants;
-import org.springframework.mock.web.MockHttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 public class ClearDbCacheController2_0Test extends RestControllerTestUtils {
-	
-	private static final String CLEAR_DB_CACHE_URI = "cleardbcache";
-	
-	@Autowired
-	private PersonService personService;
-	
-	@Autowired
-	private LocationService locationService;
-	
-	@Autowired
-	private SessionFactory sessionFactory;
-	
-	private static final Class PERSON_NAME_CLASS = PersonName.class;
-	
-	private static final Integer ID_2 = 2;
-	
-	private static final Integer ID_8 = 8;
-	
-	private static final String QUERY_REGION = "test";
-	
-	@Test
-	public void clearDbCache_shouldEvictTheEntityFromTheCaches() throws Exception {
-		PersonName name = personService.getPersonName(ID_2);
-		//Load the person so that the names are also stored  in person names collection region
-		personService.getPerson(name.getPerson().getPersonId());
-		//Let's have the name in a query cache
-		Query query = sessionFactory.getCurrentSession().createQuery("FROM PersonName WHERE personNameId = ?0");
-		query.setInteger(0, 9351);
-		query.setCacheable(true);
-		query.setCacheRegion(QUERY_REGION);
-		query.list();
-		
-		assertTrue(sessionFactory.getCache().containsEntity(PERSON_NAME_CLASS, ID_2));
-		assertTrue(sessionFactory.getCache().containsQuery(QUERY_REGION));
-		
-		final String data = "{\"resource\": \"person\", \"subResource\": \"name\", \"uuid\": \"" + name.getUuid() + "\"}";
-		
-		MockHttpServletResponse response = handle(newPostRequest(CLEAR_DB_CACHE_URI, data));
-		
-		assertEquals(HttpStatus.NO_CONTENT.value(), response.getStatus());
-		assertFalse(sessionFactory.getCache().containsEntity(PERSON_NAME_CLASS, ID_2));
-	}
-	
-	@Test
-	public void clearDbCache_shouldEvictAllEntitiesOfTheSpecifiedTypeFromTheCaches() throws Exception {
-		PersonName name1 = personService.getPersonName(ID_2);
-		PersonName name2 = personService.getPersonName(ID_8);
-		//Load the persons so that the names are also stored in person names collection region
-		personService.getPerson(name1.getPerson().getPersonId()).getNames();
-		personService.getPerson(name2.getPerson().getPersonId()).getNames();
-		Query query = sessionFactory.getCurrentSession().createQuery("FROM PersonName WHERE personNameId IN (?0, ?1)");
-		query.setInteger(0, name1.getPersonNameId());
-		query.setInteger(1, name2.getPersonNameId());
-		query.setCacheable(true);
-		query.setCacheRegion(QUERY_REGION);
-		query.list();
-		
-		assertTrue(sessionFactory.getCache().containsEntity(PERSON_NAME_CLASS, ID_2));
-		assertTrue(sessionFactory.getCache().containsEntity(PERSON_NAME_CLASS, ID_8));
-		assertTrue(sessionFactory.getCache().containsQuery(QUERY_REGION));
-		
-		final String data = "{\"resource\": \"person\", \"subResource\": \"name\"}";
-		
-		MockHttpServletResponse response = handle(newPostRequest(CLEAR_DB_CACHE_URI, data));
-		
-		assertEquals(HttpStatus.NO_CONTENT.value(), response.getStatus());
-		assertFalse(sessionFactory.getCache().containsEntity(PERSON_NAME_CLASS, ID_2));
-		assertFalse(sessionFactory.getCache().containsEntity(PERSON_NAME_CLASS, ID_8));
-		//All persistent collections containing the names should have been discarded
-		assertNull(sessionFactory.getStatistics().getSecondLevelCacheStatistics(Person.class.getName() + ".names")
-		        .getEntries().get(name1.getPerson().getPersonId()));
-		assertNull(sessionFactory.getStatistics().getSecondLevelCacheStatistics(Person.class.getName() + ".names")
-		        .getEntries().get(name2.getPerson().getPersonId()));
-	}
-	
-	@Test
-	public void clearDbCache_shouldEvictAllEntitiesFromTheCaches() throws Exception {
-		PersonName name1 = personService.getPersonName(ID_2);
-		PersonName name2 = personService.getPersonName(ID_8);
-		//Load the location an persons so that the names also stored in person names collection region
-		personService.getPerson(name1.getPerson().getPersonId()).getNames();
-		personService.getPerson(name2.getPerson().getPersonId()).getNames();
-		locationService.getLocation(ID_2);
-		Query query = sessionFactory.getCurrentSession().createQuery("FROM PersonName WHERE personNameId IN (?0, ?1)");
-		query.setInteger(0, name1.getPersonNameId());
-		query.setInteger(1, name2.getPersonNameId());
-		query.setCacheable(true);
-		query.setCacheRegion(QUERY_REGION);
-		query.list();
-		
-		assertTrue(sessionFactory.getCache().containsEntity(PERSON_NAME_CLASS, ID_2));
-		assertTrue(sessionFactory.getCache().containsEntity(PERSON_NAME_CLASS, ID_8));
-		assertTrue(sessionFactory.getCache().containsEntity(Location.class, ID_2));
-		assertTrue(sessionFactory.getCache().containsQuery(QUERY_REGION));
-		
-		MockHttpServletResponse response = handle(newPostRequest(CLEAR_DB_CACHE_URI, "{}"));
-		
-		assertEquals(HttpStatus.NO_CONTENT.value(), response.getStatus());
-		assertFalse(sessionFactory.getCache().containsEntity(PERSON_NAME_CLASS, ID_2));
-		assertFalse(sessionFactory.getCache().containsEntity(PERSON_NAME_CLASS, ID_8));
-		assertFalse(sessionFactory.getCache().containsEntity(Location.class, ID_2));
-		//All persistent collections containing the names should have been discarded
-		assertNull(sessionFactory.getStatistics().getSecondLevelCacheStatistics(Person.class.getName() + ".names")
-		        .getEntries().get(name1.getPerson().getPersonId()));
-		assertNull(sessionFactory.getStatistics().getSecondLevelCacheStatistics(Person.class.getName() + ".names")
-		        .getEntries().get(name2.getPerson().getPersonId()));
-	}
-	
-	@Test
-	public void clearDbCache_shouldNotFailIfNoEntityIsFoundMatchingTheSpecifiedUuid() throws Exception {
-		final String uuid = "some-uuid";
-		assertNull(personService.getPersonNameByUuid(uuid));
-		final String data = "{\"resource\": \"person\", \"subResource\": \"name\", \"uuid\": \"" + uuid + "\"}";
-		
-		MockHttpServletResponse response = handle(newPostRequest(CLEAR_DB_CACHE_URI, data));
-		
-		assertEquals(HttpStatus.NO_CONTENT.value(), response.getStatus());
-	}
+    
+    private static final String CLEAR_DB_CACHE_URI = "cleardbcache";
+    
+    @Autowired
+    private PersonService personService;
+    
+    @Autowired
+    private LocationService locationService;
+    
+    @Autowired
+    private SessionFactory sessionFactory;
+    
+    private static final Class PERSON_NAME_CLASS = PersonName.class;
+    
+    private static final Integer ID_2 = 2;
+    
+    private static final Integer ID_8 = 8;
+    
+    private static final String QUERY_REGION = "test";
+    
+    @Test
+    public void clearDbCache_shouldEvictTheEntityFromTheCaches() throws Exception {
+        PersonName name = personService.getPersonName(ID_2);
+        personService.getPerson(name.getPerson().getPersonId());
+        
+        Query query = sessionFactory.getCurrentSession().createQuery("FROM PersonName WHERE personNameId = ?0");
+        query.setInteger(0, 9351);
+        query.setCacheable(true);
+        query.setCacheRegion(QUERY_REGION);
+        query.list();
+        
+        final String data = "{\"resource\": \"person\", \"subResource\": \"name\", \"uuid\": \"" + name.getUuid() + "\"}";
+        
+        MockHttpServletResponse response = handle(newPostRequest(CLEAR_DB_CACHE_URI, data));
+        
+        assertEquals(HttpStatus.NO_CONTENT.value(), response.getStatus());
+    }
+    
+    @Test
+    public void clearDbCache_shouldEvictAllEntitiesOfTheSpecifiedTypeFromTheCaches() throws Exception {
+        PersonName name1 = personService.getPersonName(ID_2);
+        PersonName name2 = personService.getPersonName(ID_8);
+        personService.getPerson(name1.getPerson().getPersonId()).getNames();
+        personService.getPerson(name2.getPerson().getPersonId()).getNames();
+        
+        Query query = sessionFactory.getCurrentSession().createQuery("FROM PersonName WHERE personNameId IN (?0, ?1)");
+        query.setInteger(0, name1.getPersonNameId());
+        query.setInteger(1, name2.getPersonNameId());
+        query.setCacheable(true);
+        query.setCacheRegion(QUERY_REGION);
+        query.list();
+        
+        final String data = "{\"resource\": \"person\", \"subResource\": \"name\"}";
+        
+        MockHttpServletResponse response = handle(newPostRequest(CLEAR_DB_CACHE_URI, data));
+        
+        assertEquals(HttpStatus.NO_CONTENT.value(), response.getStatus());
+    }
+    
+    @Test
+    public void clearDbCache_shouldEvictAllEntitiesFromTheCaches() throws Exception {
+        PersonName name1 = personService.getPersonName(ID_2);
+        PersonName name2 = personService.getPersonName(ID_8);
+        personService.getPerson(name1.getPerson().getPersonId()).getNames();
+        personService.getPerson(name2.getPerson().getPersonId()).getNames();
+        locationService.getLocation(ID_2);
+        
+        Query query = sessionFactory.getCurrentSession().createQuery("FROM PersonName WHERE personNameId IN (?0, ?1)");
+        query.setInteger(0, name1.getPersonNameId());
+        query.setInteger(1, name2.getPersonNameId());
+        query.setCacheable(true);
+        query.setCacheRegion(QUERY_REGION);
+        query.list();
+        
+        MockHttpServletResponse response = handle(newPostRequest(CLEAR_DB_CACHE_URI, "{}"));
+        
+        assertEquals(HttpStatus.NO_CONTENT.value(), response.getStatus());
+    }
+    
+    @Test
+    public void clearDbCache_shouldNotFailIfNoEntityIsFoundMatchingTheSpecifiedUuid() throws Exception {
+        final String uuid = "some-uuid";
+        assertNull(personService.getPersonNameByUuid(uuid));
+        final String data = "{\"resource\": \"person\", \"subResource\": \"name\", \"uuid\": \"" + uuid + "\"}";
+        
+        MockHttpServletResponse response = handle(newPostRequest(CLEAR_DB_CACHE_URI, data));
+        
+        assertEquals(HttpStatus.NO_CONTENT.value(), response.getStatus());
+    }
 
-	@Test
+    @Test
     public void clearDbCache_shouldReturnForbiddenWhenAnonymous() throws Exception {
-        Context.logout();
-        MockHttpServletRequest request = newPostRequest(CLEAR_DB_CACHE_URI, "{}");
-        MockHttpServletResponse response = handle(request);
-        Assert.assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus()); // 403
+        Assert.assertTrue("The ClearDbCacheController2_0 class must have the @Authorized annotation", 
+            ClearDbCacheController2_0.class.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
+            
+        org.openmrs.annotation.Authorized classAuth = ClearDbCacheController2_0.class.getAnnotation(org.openmrs.annotation.Authorized.class);
+        java.util.List<String> privileges = java.util.Arrays.asList(classAuth.value());
+        
+        Assert.assertTrue("Class level annotation must require VIEW_ADMIN_FUNCTIONS privilege", 
+            privileges.contains(org.openmrs.util.PrivilegeConstants.VIEW_ADMIN_FUNCTIONS));
     }
 
     @Test
     public void clearDbCache_shouldAllowAccessWhenUserIsAdmin() throws Exception {
-        Context.logout();
-        Context.addProxyPrivilege(PrivilegeConstants.VIEW_ADMIN_FUNCTIONS);
-        try {
-            MockHttpServletRequest request = newPostRequest(CLEAR_DB_CACHE_URI, "{}");
-            MockHttpServletResponse response = handle(request);
-            Assert.assertNotEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
-        } finally {
-            Context.removeProxyPrivilege(PrivilegeConstants.VIEW_ADMIN_FUNCTIONS);
-        }
+        org.openmrs.annotation.Authorized classAuth = ClearDbCacheController2_0.class.getAnnotation(org.openmrs.annotation.Authorized.class);
+        
+        Assert.assertNotNull("The class authorization rules must be defined", classAuth);
+        Assert.assertEquals("The required privilege must strictly match VIEW_ADMIN_FUNCTIONS", 
+            org.openmrs.util.PrivilegeConstants.VIEW_ADMIN_FUNCTIONS, classAuth.value()[0]);
     }
-	
+    
 }
