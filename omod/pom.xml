@@ -36,6 +36,14 @@
 			<version>2.13.3</version>
 			<scope>test</scope>
 		</dependency>
+
+		<!-- Logback voor het opvangen van log-output in security logging tests -->
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>1.2.12</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 	
 	<build>
