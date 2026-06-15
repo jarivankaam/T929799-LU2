@@ -40,6 +40,9 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.mock.web.MockMultipartHttpServletRequest;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.openmrs.api.context.Context;
+import org.openmrs.util.PrivilegeConstants;
+import javax.servlet.http.HttpServletResponse;
 
 public class FormResourceController1_9Test extends MainResourceControllerTest {
 	
@@ -190,6 +193,22 @@ public class FormResourceController1_9Test extends MainResourceControllerTest {
 		FormResource editedForm = formService.getFormResourceByUuid(getUuid());
 		Assert.assertEquals(EDITED_NAME, editedForm.getName());
 	}
+
+	@Test
+    public void createResourceValue_shouldReturnForbiddenWhenAnonymous() throws Exception {
+        Context.logout();
+        MockHttpServletRequest request = newPostRequest(getURI() + "/some-resource-uuid/value", "{}");
+        MockHttpServletResponse response = handle(request);
+        Assert.assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+    }
+
+    @Test
+    public void getResourceValue_shouldReturnForbiddenWhenAnonymous() throws Exception {
+        Context.logout();
+        MockHttpServletRequest request = newGetRequest(getURI() + "/some-resource-uuid/value");
+        MockHttpServletResponse response = handle(request);
+        Assert.assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+    }
 	
 	@Override
 	public String getURI() {
