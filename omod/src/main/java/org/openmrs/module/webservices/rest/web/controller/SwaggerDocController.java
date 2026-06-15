@@ -9,9 +9,12 @@
  */
 package org.openmrs.module.webservices.rest.web.controller;
 
+import org.openmrs.annotation.Authorized;
+import org.openmrs.util.PrivilegeConstants;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.util.HtmlUtils;
 
 @Controller("webservices.rest.SwaggerDocController")
 @RequestMapping("/module/webservices/rest/apiDocs")
@@ -23,8 +26,10 @@ public class SwaggerDocController {
 
 	@RequestMapping(value = "/debug", method = RequestMethod.GET)
 	@org.springframework.web.bind.annotation.ResponseBody
+	@Authorized({PrivilegeConstants.VIEW_ADMIN_FUNCTIONS})
 	public String debug(@org.springframework.web.bind.annotation.RequestParam("tag") String tag) {
-		return "<h1>Debugging Tag: " + tag + "</h1>";
+		String safeTag = HtmlUtils.htmlEscape(tag);
+		return "<h1>Debugging Tag: " + safeTag + "</h1>";
 	}
 	
 }

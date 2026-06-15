@@ -10,6 +10,7 @@
 package org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs2_0;
 
 import org.openmrs.ImplementationId;
+import org.openmrs.annotation.Authorized;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.webservices.rest.web.ConversionUtil;
@@ -17,6 +18,7 @@ import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.representation.Representation;
 import org.openmrs.module.webservices.rest.web.response.IllegalRequestException;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
+import org.openmrs.util.PrivilegeConstants;
 import org.openmrs.validator.ImplementationIdValidator;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
@@ -29,6 +31,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @Controller
 @RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/implementationid")
+@Authorized({PrivilegeConstants.MANAGE_IMPLEMENTATION_ID})
 public class ImplementationIdController2_0 extends BaseRestController {
 
 	@RequestMapping(method = RequestMethod.GET)
@@ -43,6 +46,7 @@ public class ImplementationIdController2_0 extends BaseRestController {
 
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseStatus(HttpStatus.OK)
+	@Authorized({PrivilegeConstants.MANAGE_IMPLEMENTATION_ID})
 	public void updateCurrentConfiguration(@RequestBody ImplementationId implementationId) {
 		AdministrationService administrationService = Context.getAdministrationService();
 

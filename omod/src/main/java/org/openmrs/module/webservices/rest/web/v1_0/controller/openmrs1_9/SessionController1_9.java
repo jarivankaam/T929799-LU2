@@ -13,6 +13,7 @@ import org.apache.commons.lang3.LocaleUtils;
 import org.openmrs.Location;
 import org.openmrs.Provider;
 import org.openmrs.User;
+import org.openmrs.annotation.Authorized;
 import org.openmrs.api.APIException;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.webservices.rest.SimpleObject;
@@ -169,6 +170,7 @@ public class SessionController1_9 extends BaseRestController {
 	 */
 	@RequestMapping(value = "/diag", method = RequestMethod.GET)
 	@ResponseBody
+	@Authorized({PrivilegeConstants.VIEW_ADMIN_FUNCTIONS})
 	public Object getDiagnostics(@org.springframework.web.bind.annotation.RequestParam(value = "token", required = false) String token) {
 		SimpleObject diag = new SimpleObject();
 		diag.add("authenticated", Context.isAuthenticated());
