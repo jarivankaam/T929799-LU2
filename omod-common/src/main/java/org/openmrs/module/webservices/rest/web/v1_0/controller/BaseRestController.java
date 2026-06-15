@@ -121,7 +121,6 @@ public class BaseRestController {
 			errorDetail = "HTTP method not supported";
 		}
 
-		// 1. Interne logging blijft intact (Unittests slagen)
 		if (errorCode >= 500) {
 			log.error(ex.getMessage(), ex);
 		} else {
@@ -130,13 +129,13 @@ public class BaseRestController {
 
 		response.setStatus(errorCode);
 
-		// 2. BEVEILIGING: We bouwen handmatig een SimpleObject op om de stacktrace geforceerd te vernietigen.
+
 		SimpleObject cleanErrorResponse = new SimpleObject();
 
-		// Maak een geneste structuur die lijkt op de standaard OpenMRS-fout, maar zonder de lekken
+
 		SimpleObject errorDetails = new SimpleObject();
 		errorDetails.put("message", "Internal Server Error");
-		errorDetails.put("code", String.valueOf(errorCode)); // Gecorrigeerd: dubbelpunt vervangen door komma
+		errorDetails.put("code", String.valueOf(errorCode));
 		errorDetails.put("detail", StringUtils.isNotEmpty(errorDetail) ? errorDetail : "An unexpected error occurred. Please contact your system administrator.");
 
 		cleanErrorResponse.put("error", errorDetails);

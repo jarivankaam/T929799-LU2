@@ -76,11 +76,8 @@ public class VisitConfigurationController2_0 extends BaseRestController {
 		VisitService visitService = Context.getVisitService();
 		SchedulerService schedulerService = Context.getSchedulerService();
 
-		// MITIGATIE: Zorg voor een veilige null-check. Als 'enableVisits' ontbreekt in de JSON,
-		// zetten we de interne boolean veilig op 'false' in plaats van te crashen.
 		boolean isEnabled = (newConfiguration.getEnableVisits() != null) ? newConfiguration.getEnableVisits() : false;
 
-		// Veilige validatie met de lokale 'isEnabled' variabele
 		if (isEnabled && StringUtils.isEmpty(newConfiguration.getEncounterVisitsAssignmentHandler())) {
 			throw new IllegalRequestException("Encounter Visit assignment handler cannot be empty");
 		}
@@ -99,7 +96,6 @@ public class VisitConfigurationController2_0 extends BaseRestController {
 			}
 		}
 
-		// Sla ook de overige configuraties veilig op (met een extra null-check voor de overige booleans)
 		Boolean autoCloseStarted = (newConfiguration.getStartAutoCloseVisitsTask() != null) ? newConfiguration.getStartAutoCloseVisitsTask() : false;
 		updateGetAutoCloseVisitsTaskStartedValue(schedulerService, autoCloseStarted);
 

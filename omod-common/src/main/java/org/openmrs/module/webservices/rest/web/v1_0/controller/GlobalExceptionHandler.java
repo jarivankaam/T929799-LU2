@@ -26,13 +26,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseBody
     public SimpleObject handleAllUnhandledExceptions(Exception ex, HttpServletResponse response) {
-        // 1. Zorg dat de administrator de fout nog altijd in de Docker/Tomcat logs ziet
         log.error("GLOBAL APP CRASH DETECTED: " + ex.getMessage(), ex);
 
-        // 2. Zet de HTTP status dwingend op 500
         response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 
-        // 3. Bouw handmatig de schone JSON response op (GEEN RestUtil gebruiken!)
         SimpleObject cleanErrorResponse = new SimpleObject();
         SimpleObject errorDetails = new SimpleObject();
 
