@@ -22,6 +22,10 @@ import org.openmrs.module.webservices.rest.web.response.ConversionException;
 import org.openmrs.module.webservices.rest.web.response.ResourceDoesNotSupportOperationException;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.MainResourceControllerTest;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.openmrs.api.context.Context;
+import org.openmrs.util.PrivilegeConstants;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Tests functionality of {@link HL7MessageController1_8}.
@@ -139,6 +143,22 @@ public class HL7MessageController1_8Test extends MainResourceControllerTest {
 		MockHttpServletRequest req = newPostRequest(getURI(), hl7Message);
 		deserialize(handle(req));
 	}
+
+	@Test
+    public void get_shouldReturnForbiddenWhenAnonymous() throws Exception {
+        Context.logout();
+        MockHttpServletRequest request = newGetRequest(getURI());
+        MockHttpServletResponse response = handle(request);
+        Assert.assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+    }
+
+    @Test
+    public void create_shouldReturnForbiddenWhenAnonymous() throws Exception {
+        Context.logout();
+        MockHttpServletRequest request = newPostRequest(getURI(), "{}");
+        MockHttpServletResponse response = handle(request);
+        Assert.assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+    }
 	
 	/**
 	 * @see MainResourceControllerTest#shouldGetDefaultByUuid()
