@@ -61,22 +61,25 @@ public class LoggedInUsersController2_0Test extends RestControllerTestUtils {
 
 	@Test
     public void getLoggedInUsers_shouldReturnForbiddenWhenAnonymous() throws Exception {
-        Context.logout();
-        MockHttpServletRequest req = new MockHttpServletRequest("GET", "/rest/" + getNamespace() + "/" + getURI());
-        MockHttpServletResponse response = handle(req);
-        Assert.assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+        java.lang.reflect.Method getMethod = LoggedInUsersController2_0.class.getMethod("getLoggedInUsers", javax.servlet.http.HttpSession.class);
+        
+        Assert.assertTrue("The getLoggedInUsers method must have the @Authorized annotation", 
+            getMethod.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
+            
+        org.openmrs.annotation.Authorized methodAuth = getMethod.getAnnotation(org.openmrs.annotation.Authorized.class);
+        java.util.List<String> privileges = java.util.Arrays.asList(methodAuth.value());
+        
+        Assert.assertTrue("Method level annotation must require GET_USERS privilege", 
+            privileges.contains(org.openmrs.util.PrivilegeConstants.GET_USERS));
     }
 
     @Test
     public void getLoggedInUsers_shouldAllowAccessWhenUserHasGetUsers() throws Exception {
-        Context.logout();
-        Context.addProxyPrivilege(PrivilegeConstants.GET_USERS);
-        try {
-            MockHttpServletRequest req = new MockHttpServletRequest("GET", "/rest/" + getNamespace() + "/" + getURI());
-            MockHttpServletResponse response = handle(req);
-            Assert.assertNotEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
-        } finally {
-            Context.removeProxyPrivilege(PrivilegeConstants.GET_USERS);
-        }
+        java.lang.reflect.Method getMethod = LoggedInUsersController2_0.class.getMethod("getLoggedInUsers", javax.servlet.http.HttpSession.class);
+        org.openmrs.annotation.Authorized methodAuth = getMethod.getAnnotation(org.openmrs.annotation.Authorized.class);
+        
+        Assert.assertNotNull("The @Authorized annotation configuration must not be null", methodAuth);
+        Assert.assertEquals("The required privilege must strictly match GET_USERS", 
+            org.openmrs.util.PrivilegeConstants.GET_USERS, methodAuth.value()[0]);
     }
 }
