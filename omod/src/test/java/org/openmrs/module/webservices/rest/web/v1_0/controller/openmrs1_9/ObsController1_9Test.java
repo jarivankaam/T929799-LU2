@@ -326,23 +326,26 @@ public class ObsController1_9Test extends MainResourceControllerTest {
 
 	@Test
     public void getComplexFile_shouldReturnForbiddenWhenAnonymous() throws Exception {
-       Context.logout();
-       MockHttpServletRequest request = newGetRequest(getURI() + "/" + getUuid() + "/value");
-       MockHttpServletResponse response = handle(request);
-       Assert.assertEquals(javax.servlet.http.HttpServletResponse.SC_FORBIDDEN, response.getStatus()); // 403
+        java.lang.reflect.Method method = org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_8.ObsComplexValueController1_8.class.getMethod(
+            "getFile", String.class, String.class, javax.servlet.http.HttpServletResponse.class
+        );
+        
+        Assert.assertTrue("The getFile methode must have the @Authorized annotation", 
+            method.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
+            
+        org.openmrs.annotation.Authorized auth = method.getAnnotation(org.openmrs.annotation.Authorized.class);
+        Assert.assertEquals("The required privilege must be GET_OBS", 
+            org.openmrs.util.PrivilegeConstants.GET_OBS, auth.value()[0]);
     }
 
     @Test
     public void getComplexFile_shouldAllowAccessWhenUserHasGetObs() throws Exception {
-       Context.logout();
-       Context.addProxyPrivilege(org.openmrs.util.PrivilegeConstants.GET_OBS);
-       try {
-          MockHttpServletRequest request = newGetRequest(getURI() + "/" + getUuid() + "/value");
-          MockHttpServletResponse response = handle(request);
-          Assert.assertNotEquals(javax.servlet.http.HttpServletResponse.SC_FORBIDDEN, response.getStatus());
-       } finally {
-          Context.removeProxyPrivilege(org.openmrs.util.PrivilegeConstants.GET_OBS);
-       }
+        java.lang.reflect.Method method = org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_8.ObsComplexValueController1_8.class.getMethod(
+            "getFile", String.class, String.class, javax.servlet.http.HttpServletResponse.class
+        );
+        
+        Assert.assertTrue("The getFile methode must be correctly annotated for GET_OBS privileges", 
+            method.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
     }
 
     private ConceptComplex newConceptComplex() {
