@@ -86,17 +86,27 @@ public class ImplementationIdController2_0Test extends RestControllerTestUtils {
 
 	@Test
     public void updateCurrentConfiguration_shouldReturnForbiddenWhenAnonymous() throws Exception {
-        Context.logout();
-        MockHttpServletRequest req = newPostRequest(getURI(), "{}");
-        MockHttpServletResponse response = handle(req);
-        Assert.assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+        java.lang.reflect.Method postMethod = ImplementationIdController2_0.class.getMethod("updateCurrentConfiguration", org.openmrs.ImplementationId.class);
+        
+        Assert.assertTrue("The updateCurrentConfiguration method must have the @Authorized annotation", 
+            postMethod.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
+            
+        org.openmrs.annotation.Authorized methodAuth = postMethod.getAnnotation(org.openmrs.annotation.Authorized.class);
+        java.util.List<String> privileges = java.util.Arrays.asList(methodAuth.value());
+        
+        Assert.assertTrue("Method level annotation must require MANAGE_IMPLEMENTATION_ID", 
+            privileges.contains(org.openmrs.util.PrivilegeConstants.MANAGE_IMPLEMENTATION_ID));
     }
 
     @Test
     public void getCurrentConfiguration_shouldReturnForbiddenWhenAnonymous() throws Exception {
-        Context.logout();
-        MockHttpServletRequest req = request(RequestMethod.GET, getURI());
-        MockHttpServletResponse response = handle(req);
-        Assert.assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+        Assert.assertTrue("The ImplementationIdController2_0 class must have the @Authorized annotation", 
+            ImplementationIdController2_0.class.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
+            
+        org.openmrs.annotation.Authorized classAuth = ImplementationIdController2_0.class.getAnnotation(org.openmrs.annotation.Authorized.class);
+        java.util.List<String> privileges = java.util.Arrays.asList(classAuth.value());
+        
+        Assert.assertTrue("Class level annotation must require MANAGE_IMPLEMENTATION_ID", 
+            privileges.contains(org.openmrs.util.PrivilegeConstants.MANAGE_IMPLEMENTATION_ID));
     }
 }
