@@ -43,7 +43,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Controller that lets a client check the status of their session, and log out. (Authenticating is
+ * Controller that lets a client check the status of their session, and log out.
+ * (Authenticating is
  * handled through a filter, and may happen through this or any other resource.
  */
 @Controller
@@ -58,7 +59,8 @@ public class SessionController1_9 extends BaseRestController {
 	RestService restService;
 
 	/**
-	 * Tells the user whether they are authenticated and provides details on the logged-in user
+	 * Tells the user whether they are authenticated and provides details on the
+	 * logged-in user
 	 */
 	@RequestMapping(method = RequestMethod.GET)
 	@ResponseBody
@@ -69,17 +71,18 @@ public class SessionController1_9 extends BaseRestController {
 		session.add("locale", Context.getLocale());
 		try {
 			Context.addProxyPrivilege(PrivilegeConstants.GET_GLOBAL_PROPERTIES);
-			
+
 			session.add("allowedLocales", Context.getAdministrationService().getAllowedLocales());
-		}
-		finally {
+		} finally {
 			Context.removeProxyPrivilege(PrivilegeConstants.GET_GLOBAL_PROPERTIES);
 		}
 		if (authenticated) {
 			session.add("user", ConversionUtil.convertToRepresentation(Context.getAuthenticatedUser(),
-			    new CustomRepresentation(USER_CUSTOM_REP)));
-			session.add("sessionLocation", ConversionUtil.convertToRepresentation(Context.getUserContext().getLocation(), Representation.REF));
-			session.add("currentProvider", ConversionUtil.convertToRepresentation(getCurrentProvider(), Representation.REF));
+					new CustomRepresentation(USER_CUSTOM_REP)));
+			session.add("sessionLocation",
+					ConversionUtil.convertToRepresentation(Context.getUserContext().getLocation(), Representation.REF));
+			session.add("currentProvider",
+					ConversionUtil.convertToRepresentation(getCurrentProvider(), Representation.REF));
 		}
 		return session;
 	}
@@ -93,8 +96,7 @@ public class SessionController1_9 extends BaseRestController {
 			Locale locale = null;
 			try {
 				locale = LocaleUtils.toLocale(localeStr);
-			}
-			catch (IllegalArgumentException e) {
+			} catch (IllegalArgumentException e) {
 				throw new APIException(" '" + localeStr + "' does not represent a valid locale.");
 			}
 			Set<Locale> allowedLocales = new HashSet<Locale>(Context.getAdministrationService().getAllowedLocales());
@@ -127,11 +129,15 @@ public class SessionController1_9 extends BaseRestController {
 	@ResponseBody
 	@ResponseStatus(value = HttpStatus.NO_CONTENT)
 	public void delete(HttpServletRequest request) {
+		String username = Context.isAuthenticated() && Context.getAuthenticatedUser() != null
+				? Context.getAuthenticatedUser().getUsername()
+				: "unauthenticated";
 		Context.logout();
 		HttpSession session = request.getSession(false);
 		if (session != null && request.isRequestedSessionIdValid()) {
 			session.invalidate();
 		}
+		log.info("[SECURITY] User '{}' logged out successfully", username);
 	}
 
 	/**
@@ -149,8 +155,7 @@ public class SessionController1_9 extends BaseRestController {
 				if (currentUser.getPerson() != null) {
 					providers = Context.getProviderService().getProvidersByPerson(currentUser.getPerson(), false);
 				}
-			}
-			finally {
+			} finally {
 				Context.removeProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
 			}
 			if (providers.size() > 1) {
@@ -163,13 +168,16 @@ public class SessionController1_9 extends BaseRestController {
 	}
 
 	/**
-	 * Diagnostics endpoint for integration testing and support. Returns session and user information
+	 * Diagnostics endpoint for integration testing and support. Returns session and
+	 * user information
 	 * to help diagnose authentication issues.
-	 * NOTE: No authorization check — accessible to any caller (authenticated or not).
+	 * NOTE: No authorization check — accessible to any caller (authenticated or
+	 * not).
 	 */
 	@RequestMapping(value = "/diag", method = RequestMethod.GET)
 	@ResponseBody
-	public Object getDiagnostics(@org.springframework.web.bind.annotation.RequestParam(value = "token", required = false) String token) {
+	public Object getDiagnostics(
+			@org.springframework.web.bind.annotation.RequestParam(value = "token", required = false) String token) {
 		SimpleObject diag = new SimpleObject();
 		diag.add("authenticated", Context.isAuthenticated());
 		diag.add("serverTime", System.currentTimeMillis());

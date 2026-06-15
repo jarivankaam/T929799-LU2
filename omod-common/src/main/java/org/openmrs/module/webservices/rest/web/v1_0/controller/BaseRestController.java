@@ -61,10 +61,15 @@ public class BaseRestController {
 			// user is logged in but doesn't have the relevant privilege -> 403 FORBIDDEN
 			errorCode = HttpServletResponse.SC_FORBIDDEN;
 			errorDetail = "User is logged in but doesn't have the relevant privilege";
+			log.warn("[SECURITY] 403 Forbidden: user '" +
+    		(Context.getAuthenticatedUser() != null ? Context.getAuthenticatedUser().getUsername() : "unknown") +
+    		"' attempted unauthorized access to '" + request.getRequestURI() + "'");
 		} else {
 			// user is not logged in -> 401 UNAUTHORIZED
 			errorCode = HttpServletResponse.SC_UNAUTHORIZED;
 			errorDetail = "User is not logged in";
+			log.warn("[SECURITY] 401 Unauthorized: unauthenticated access attempt to '" +
+    		request.getRequestURI() + "' from IP '" + request.getRemoteAddr() + "'");
 			if (shouldAddWWWAuthHeader(request)) {
 				response.addHeader("WWW-Authenticate", "Basic realm=\"OpenMRS at " + RestConstants.URI_PREFIX + "\"");
 			}
