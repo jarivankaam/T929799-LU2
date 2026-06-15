@@ -88,7 +88,7 @@ public class AuthorizationFilterLoggingTest extends BaseModuleWebContextSensitiv
 	 */
 	@Test
 	public void doFilter_shouldLogSuccessfulLoginAtInfoLevel() throws Exception {
-		request.addHeader("Authorization", encodeCredentials("admin", "Admin1234"));
+		request.addHeader("Authorization", encodeCredentials("admin", "Admin123"));
 		request.setRemoteAddr("127.0.0.1");
 
 		filter.doFilter(request, response, chain);
@@ -156,7 +156,7 @@ public class AuthorizationFilterLoggingTest extends BaseModuleWebContextSensitiv
 	 */
 	@Test
 	public void doFilter_shouldNotLogPasswordOnSuccessfulLogin() throws Exception {
-		String wachtwoord = "Admin1234";
+		String wachtwoord = "Admin123";
 		request.addHeader("Authorization", encodeCredentials("admin", wachtwoord));
 		request.setRemoteAddr("127.0.0.1");
 
