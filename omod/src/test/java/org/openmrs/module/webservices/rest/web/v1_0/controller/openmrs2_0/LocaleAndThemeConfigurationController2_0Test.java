@@ -19,7 +19,12 @@ import org.openmrs.module.webservices.rest.web.v1_0.controller.RestControllerTes
 import org.openmrs.scheduler.SchedulerException;
 import org.openmrs.util.OpenmrsConstants;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.junit.Assert;
+import org.openmrs.api.context.Context;
+import org.openmrs.util.PrivilegeConstants;
+import javax.servlet.http.HttpServletResponse;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -71,6 +76,22 @@ public class LocaleAndThemeConfigurationController2_0Test extends RestController
 		assertEquals("en_GB", PropertyUtils.getProperty(result, "defaultLocale"));
 		assertEquals("purple", PropertyUtils.getProperty(result, "defaultTheme"));
 	}
+
+	@Test
+    public void getCurrentConfiguration_shouldReturnForbiddenWhenAnonymous() throws Exception {
+        Context.logout();
+        MockHttpServletRequest request = request(RequestMethod.GET, getURI());
+        MockHttpServletResponse response = handle(request);
+        Assert.assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus()); // 403
+    }
+
+    @Test
+    public void updateCurrentConfiguration_shouldReturnForbiddenWhenAnonymous() throws Exception {
+        Context.logout();
+        MockHttpServletRequest request = newPostRequest(getURI(), "{}");
+        MockHttpServletResponse response = handle(request);
+        Assert.assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus()); // 403
+    }
 
 	private String getURI() {
 		return "localeandthemeconfiguration";

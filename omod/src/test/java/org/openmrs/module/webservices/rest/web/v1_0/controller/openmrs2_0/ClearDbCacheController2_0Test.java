@@ -27,6 +27,11 @@ import org.openmrs.module.webservices.rest.web.v1_0.controller.RestControllerTes
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.junit.Assert;
+import org.openmrs.api.context.Context;
+import org.openmrs.util.PrivilegeConstants;
+import org.springframework.mock.web.MockHttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 public class ClearDbCacheController2_0Test extends RestControllerTestUtils {
 	
@@ -147,5 +152,26 @@ public class ClearDbCacheController2_0Test extends RestControllerTestUtils {
 		
 		assertEquals(HttpStatus.NO_CONTENT.value(), response.getStatus());
 	}
+
+	@Test
+    public void clearDbCache_shouldReturnForbiddenWhenAnonymous() throws Exception {
+        Context.logout();
+        MockHttpServletRequest request = newPostRequest(CLEAR_DB_CACHE_URI, "{}");
+        MockHttpServletResponse response = handle(request);
+        Assert.assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus()); // 403
+    }
+
+    @Test
+    public void clearDbCache_shouldAllowAccessWhenUserIsAdmin() throws Exception {
+        Context.logout();
+        Context.addProxyPrivilege(PrivilegeConstants.VIEW_ADMIN_FUNCTIONS);
+        try {
+            MockHttpServletRequest request = newPostRequest(CLEAR_DB_CACHE_URI, "{}");
+            MockHttpServletResponse response = handle(request);
+            Assert.assertNotEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+        } finally {
+            Context.removeProxyPrivilege(PrivilegeConstants.VIEW_ADMIN_FUNCTIONS);
+        }
+    }
 	
 }

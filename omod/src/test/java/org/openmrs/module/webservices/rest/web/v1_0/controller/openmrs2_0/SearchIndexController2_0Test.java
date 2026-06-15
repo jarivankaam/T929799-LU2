@@ -14,6 +14,10 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.openmrs.api.db.ContextDAO;
 import org.openmrs.test.BaseContextMockTest;
+import org.junit.Assert;
+import org.openmrs.api.context.Context;
+import org.openmrs.api.APIAuthenticationException;
+import org.openmrs.util.PrivilegeConstants;
 
 public class SearchIndexController2_0Test extends BaseContextMockTest {
 
@@ -35,5 +39,28 @@ public class SearchIndexController2_0Test extends BaseContextMockTest {
 		
 		Mockito.verify(contextDAO, Mockito.times(1)).updateSearchIndexAsync();
 	}
+
+	@Test
+    public void updateSearchIndex_shouldReturnForbiddenWhenAnonymous() throws Exception {
+        Context.logout();
+        try {
+            controller.updateSearchIndex(null);
+            Assert.fail("This should have thrown an APIAuthenticationException");
+        } catch (APIAuthenticationException e) {
+            Assert.assertTrue(true);
+        }
+    }
+
+    @Test
+    public void updateSearchIndex_shouldAllowAccessWhenUserHasManageSearchIndex() throws Exception {
+        Context.logout();
+        Context.addProxyPrivilege(PrivilegeConstants.MANAGE_SEARCH_INDEX);
+        try {
+            controller.updateSearchIndex(null);
+            Mockito.verify(contextDAO, Mockito.atLeastOnce()).updateSearchIndex();
+        } finally {
+            Context.removeProxyPrivilege(PrivilegeConstants.MANAGE_SEARCH_INDEX);
+        }
+    }
 	
 }

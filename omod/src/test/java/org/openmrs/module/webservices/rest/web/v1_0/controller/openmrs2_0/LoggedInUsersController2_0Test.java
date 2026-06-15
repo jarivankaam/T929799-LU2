@@ -18,6 +18,10 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
+import org.junit.Assert;
+import org.openmrs.api.context.Context;
+import org.openmrs.util.PrivilegeConstants;
+import javax.servlet.http.HttpServletResponse;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -55,4 +59,24 @@ public class LoggedInUsersController2_0Test extends RestControllerTestUtils {
 		assertEquals("username", result.get(0));
 	}
 
+	@Test
+    public void getLoggedInUsers_shouldReturnForbiddenWhenAnonymous() throws Exception {
+        Context.logout();
+        MockHttpServletRequest req = new MockHttpServletRequest("GET", "/rest/" + getNamespace() + "/" + getURI());
+        MockHttpServletResponse response = handle(req);
+        Assert.assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+    }
+
+    @Test
+    public void getLoggedInUsers_shouldAllowAccessWhenUserHasGetUsers() throws Exception {
+        Context.logout();
+        Context.addProxyPrivilege(PrivilegeConstants.GET_USERS);
+        try {
+            MockHttpServletRequest req = new MockHttpServletRequest("GET", "/rest/" + getNamespace() + "/" + getURI());
+            MockHttpServletResponse response = handle(req);
+            Assert.assertNotEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+        } finally {
+            Context.removeProxyPrivilege(PrivilegeConstants.GET_USERS);
+        }
+    }
 }
