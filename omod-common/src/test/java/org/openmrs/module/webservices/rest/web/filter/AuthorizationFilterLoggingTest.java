@@ -17,178 +17,148 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.openmrs.web.test.BaseModuleWebContextSensitiveTest;
+import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.webservices.rest.web.RestUtil;
 import org.slf4j.LoggerFactory;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
-import javax.servlet.http.HttpServletResponse;
 import java.nio.charset.Charset;
 import java.util.Base64;
 import java.util.List;
 
-/**
- * Tests voor de logging in {@link AuthorizationFilter}.
- * Verifieert dat beveiligingsrelevante gebeurtenissen correct worden gelogd
- * en dat geen gevoelige data (wachtwoorden) in de logs verschijnt.
- *
- * Extends BaseModuleWebContextSensitiveTest zodat de OpenMRS context
- * beschikbaar is voor RestUtil.isIpAllowed().
- */
-public class AuthorizationFilterLoggingTest extends BaseModuleWebContextSensitiveTest {
+@RunWith(MockitoJUnitRunner.class)
+public class AuthorizationFilterLoggingTest {
 
-	private AuthorizationFilter filter;
+    private AuthorizationFilter filter;
+    private MockHttpServletRequest request;
+    private MockHttpServletResponse response;
+    private MockFilterChain chain;
+    private ListAppender<ILoggingEvent> logAppender;
+    private Logger filterLogger;
 
-	private MockHttpServletRequest request;
+    private MockedStatic<RestUtil> mockedRestUtil;
+    private MockedStatic<Context> mockedContext;
 
-	private MockHttpServletResponse response;
+    @Before
+    public void setUp() {
+        filter = new AuthorizationFilter();
+        request = new MockHttpServletRequest();
+        response = new MockHttpServletResponse();
+        chain = new MockFilterChain();
 
-	private MockFilterChain chain;
+        // Mock RestUtil zodat IP altijd toegestaan is
+        mockedRestUtil = Mockito.mockStatic(RestUtil.class);
+        mockedRestUtil.when(() -> RestUtil.isIpAllowed(Mockito.anyString())).thenReturn(true);
 
-	private ListAppender<ILoggingEvent> logAppender;
+        // Mock Context zodat isAuthenticated() false teruggeeft
+        mockedContext = Mockito.mockStatic(Context.class);
+        mockedContext.when(Context::isAuthenticated).thenReturn(false);
+        mockedContext.when(() -> Context.authenticate("admin", "Admin123")).thenAnswer(inv -> null);
+        mockedContext.when(() -> Context.authenticate(Mockito.eq("admin"), Mockito.argThat(p -> !p.equals("Admin123"))))
+                .thenThrow(new org.openmrs.api.context.ContextAuthenticationException("Bad credentials"));
 
-	private Logger filterLogger;
+        filterLogger = (Logger) LoggerFactory.getLogger(AuthorizationFilter.class);
+        filterLogger.setLevel(Level.DEBUG);
+        logAppender = new ListAppender<>();
+        logAppender.start();
+        filterLogger.addAppender(logAppender);
+    }
 
-	@Before
-	public void setUp() {
-		filter = new AuthorizationFilter();
-		request = new MockHttpServletRequest();
-		response = new MockHttpServletResponse();
-		chain = new MockFilterChain();
+    @After
+    public void tearDown() {
+        filterLogger.detachAppender(logAppender);
+        mockedRestUtil.close();
+        mockedContext.close();
+    }
 
-		// Koppel een ListAppender aan de logger van AuthorizationFilter
-		filterLogger = (Logger) LoggerFactory.getLogger(AuthorizationFilter.class);
-		logAppender = new ListAppender<>();
-		logAppender.start();
-		filterLogger.addAppender(logAppender);
-	}
+    private String encodeCredentials(String username, String password) {
+        return "Basic " + Base64.getEncoder().encodeToString(
+                (username + ":" + password).getBytes(Charset.forName("UTF-8")));
+    }
 
-	@After
-	public void tearDown() {
-		filterLogger.detachAppender(logAppender);
-	}
+    @Test
+    public void doFilter_shouldLogSuccessfulLoginAtInfoLevel() throws Exception {
+        request.addHeader("Authorization", encodeCredentials("admin", "Admin123"));
+        request.setRemoteAddr("127.0.0.1");
 
-	// =========================================================
-	// Helper methode
-	// =========================================================
+        filter.doFilter(request, response, chain);
 
-	private String encodeCredentials(String username, String password) {
-		String credentials = username + ":" + password;
-		return "Basic " + Base64.getEncoder().encodeToString(credentials.getBytes(Charset.forName("UTF-8")));
-	}
+        List<ILoggingEvent> logs = logAppender.list;
+        boolean foundLog = logs.stream()
+                .anyMatch(e -> e.getLevel() == Level.INFO
+                        && e.getFormattedMessage().contains("[SECURITY]")
+                        && e.getFormattedMessage().contains("Successful login")
+                        && e.getFormattedMessage().contains("admin"));
 
-	// =========================================================
-	// Tests: succesvolle acties
-	// =========================================================
+        Assert.assertTrue("Geslaagde login moet gelogd worden op INFO-niveau met [SECURITY] tag", foundLog);
+    }
 
-	/**
-	 * Verifieert dat een geslaagde inlogpoging wordt gelogd op INFO-niveau
-	 * met de gebruikersnaam en de [SECURITY] tag.
-	 */
-	@Test
-	public void doFilter_shouldLogSuccessfulLoginAtInfoLevel() throws Exception {
-		request.addHeader("Authorization", encodeCredentials("admin", "Admin123"));
-		request.setRemoteAddr("127.0.0.1");
+    @Test
+    public void doFilter_shouldLogFailedLoginAtWarnLevel() throws Exception {
+        request.addHeader("Authorization", encodeCredentials("admin", "foutWachtwoord"));
+        request.setRemoteAddr("127.0.0.1");
 
-		filter.doFilter(request, response, chain);
+        filter.doFilter(request, response, chain);
 
-		List<ILoggingEvent> logs = logAppender.list;
-		boolean foundLog = logs.stream()
-			.anyMatch(e -> e.getLevel() == Level.INFO
-				&& e.getFormattedMessage().contains("[SECURITY]")
-				&& e.getFormattedMessage().contains("Successful login")
-				&& e.getFormattedMessage().contains("admin"));
+        List<ILoggingEvent> logs = logAppender.list;
+        boolean foundWarnLog = logs.stream()
+                .anyMatch(e -> e.getLevel() == Level.WARN
+                        && e.getFormattedMessage().contains("[SECURITY]")
+                        && e.getFormattedMessage().contains("Failed login")
+                        && e.getFormattedMessage().contains("admin"));
 
-		Assert.assertTrue("Geslaagde login moet gelogd worden op INFO-niveau met [SECURITY] tag", foundLog);
-	}
+        Assert.assertTrue("Een mislukte inlogpoging moet gelogd worden op WARN-niveau", foundWarnLog);
+    }
 
-	// =========================================================
-	// Tests: mislukte acties
-	// =========================================================
+    @Test
+    public void doFilter_shouldNotLogPasswordOnFailedLogin() throws Exception {
+        String geheimWachtwoord = "SuperGeheimWachtwoord123!";
+        request.addHeader("Authorization", encodeCredentials("admin", geheimWachtwoord));
+        request.setRemoteAddr("127.0.0.1");
 
-	/**
-	 * Verifieert dat een mislukte inlogpoging wordt gelogd op WARN-niveau
-	 * met de gebruikersnaam maar ZONDER het wachtwoord.
-	 */
-	@Test
-	public void doFilter_shouldLogFailedLoginAtWarnLevel() throws Exception {
-		request.addHeader("Authorization", encodeCredentials("admin", "foutWachtwoord"));
-		request.setRemoteAddr("127.0.0.1");
+        filter.doFilter(request, response, chain);
 
-		filter.doFilter(request, response, chain);
+        boolean passwordInLogs = logAppender.list.stream()
+                .anyMatch(e -> e.getFormattedMessage().contains(geheimWachtwoord));
 
-		List<ILoggingEvent> logs = logAppender.list;
-		boolean foundWarnLog = logs.stream()
-			.anyMatch(e -> e.getLevel() == Level.WARN
-				&& e.getFormattedMessage().contains("[SECURITY]")
-				&& e.getFormattedMessage().contains("Failed login")
-				&& e.getFormattedMessage().contains("admin"));
+        Assert.assertFalse("Het wachtwoord mag NOOIT in de logs verschijnen", passwordInLogs);
+    }
 
-		Assert.assertTrue("Een mislukte inlogpoging moet gelogd worden op WARN-niveau", foundWarnLog);
-	}
+    @Test
+    public void doFilter_shouldNotLogPasswordOnSuccessfulLogin() throws Exception {
+        String wachtwoord = "Admin123";
+        request.addHeader("Authorization", encodeCredentials("admin", wachtwoord));
+        request.setRemoteAddr("127.0.0.1");
 
-	// =========================================================
-	// Tests: afwezigheid van gevoelige data
-	// =========================================================
+        filter.doFilter(request, response, chain);
 
-	/**
-	 * Verifieert dat het wachtwoord NIET verschijnt in de logs bij een mislukte login.
-	 * Dit is cruciaal voor NEN-7510 A.8.15: gevoelige data mag niet worden gelogd.
-	 */
-	@Test
-	public void doFilter_shouldNotLogPasswordOnFailedLogin() throws Exception {
-		String geheimWachtwoord = "SuperGeheimWachtwoord123!";
-		request.addHeader("Authorization", encodeCredentials("admin", geheimWachtwoord));
-		request.setRemoteAddr("127.0.0.1");
+        boolean passwordInLogs = logAppender.list.stream()
+                .anyMatch(e -> e.getFormattedMessage().contains(wachtwoord));
 
-		filter.doFilter(request, response, chain);
+        Assert.assertFalse("Het wachtwoord mag NOOIT in de logs verschijnen", passwordInLogs);
+    }
 
-		List<ILoggingEvent> logs = logAppender.list;
-		boolean passwordInLogs = logs.stream()
-			.anyMatch(e -> e.getFormattedMessage().contains(geheimWachtwoord));
+    @Test
+    public void doFilter_shouldIncludeSecurityTagInAllSecurityLogs() throws Exception {
+        request.addHeader("Authorization", encodeCredentials("admin", "foutWachtwoord"));
+        request.setRemoteAddr("127.0.0.1");
 
-		Assert.assertFalse("Het wachtwoord mag NOOIT in de logs verschijnen", passwordInLogs);
-	}
+        filter.doFilter(request, response, chain);
 
-	/**
-	 * Verifieert dat het wachtwoord NIET verschijnt in de logs bij een geslaagde login.
-	 */
-	@Test
-	public void doFilter_shouldNotLogPasswordOnSuccessfulLogin() throws Exception {
-		String wachtwoord = "Admin123";
-		request.addHeader("Authorization", encodeCredentials("admin", wachtwoord));
-		request.setRemoteAddr("127.0.0.1");
+        boolean allTagged = logAppender.list.stream()
+                .filter(e -> e.getLevel() == Level.WARN || e.getLevel() == Level.INFO)
+                .filter(e -> e.getFormattedMessage().contains("login")
+                        || e.getFormattedMessage().contains("Login")
+                        || e.getFormattedMessage().contains("IP")
+                        || e.getFormattedMessage().contains("Session"))
+                .allMatch(e -> e.getFormattedMessage().contains("[SECURITY]"));
 
-		filter.doFilter(request, response, chain);
-
-		List<ILoggingEvent> logs = logAppender.list;
-		boolean passwordInLogs = logs.stream()
-			.anyMatch(e -> e.getFormattedMessage().contains(wachtwoord));
-
-		Assert.assertFalse("Het wachtwoord mag NOOIT in de logs verschijnen", passwordInLogs);
-	}
-
-	/**
-	 * Verifieert dat de [SECURITY] tag aanwezig is in alle beveiligingsrelevante logregels.
-	 */
-	@Test
-	public void doFilter_shouldIncludeSecurityTagInAllSecurityLogs() throws Exception {
-		request.addHeader("Authorization", encodeCredentials("admin", "foutWachtwoord"));
-		request.setRemoteAddr("127.0.0.1");
-
-		filter.doFilter(request, response, chain);
-
-		List<ILoggingEvent> logs = logAppender.list;
-		boolean allSecurityLogsTagged = logs.stream()
-			.filter(e -> e.getLevel() == Level.WARN || e.getLevel() == Level.INFO)
-			.filter(e -> e.getFormattedMessage().contains("login")
-				|| e.getFormattedMessage().contains("Login")
-				|| e.getFormattedMessage().contains("IP")
-				|| e.getFormattedMessage().contains("Session"))
-			.allMatch(e -> e.getFormattedMessage().contains("[SECURITY]"));
-
-		Assert.assertTrue("Alle security-logregels moeten de [SECURITY] tag bevatten",
-			allSecurityLogsTagged);
-	}
+        Assert.assertTrue("Alle security-logregels moeten de [SECURITY] tag bevatten", allTagged);
+    }
 }

@@ -50,6 +50,13 @@
 			</exclusions>
 		</dependency>
 
+		<dependency>
+    		<groupId>org.mockito</groupId>
+    		<artifactId>mockito-inline</artifactId>
+    		<version>4.11.0</version>
+    		<scope>test</scope>
+		</dependency>
+
 		<!-- Logback voor het opvangen van log-output in security logging tests -->
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
@@ -58,6 +65,8 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+
+	
 
 	<build>
 		<resources>

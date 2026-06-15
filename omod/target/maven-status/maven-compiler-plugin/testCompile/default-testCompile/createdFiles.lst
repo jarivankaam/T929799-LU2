@@ -181,6 +181,7 @@ org\openmrs\module\webservices\rest\web\MockTaskServiceWrapper.class
 org\openmrs\module\webservices\rest\web\v1_0\controller\openmrs2_7\ObsReferenceRangeController2_7Test.class
 org\openmrs\module\webservices\rest\validation\ValidateUtilTest.class
 org\openmrs\module\webservices\rest\web\v1_0\resource\openmrs1_8\FieldAnswerResource1_8Test.class
+org\openmrs\module\webservices\rest\web\v1_0\controller\BaseRestControllerLoggingTest.class
 org\openmrs\module\webservices\rest\web\v1_0\resource\openmrs1_9\LocationAttributeTypeResource1_9Test.class
 org\openmrs\module\webservices\rest\web\v1_0\resource\openmrs1_10\PersonResource1_10Test.class
 org\openmrs\module\webservices\rest\web\v1_0\controller\openmrs1_9\ConceptController1_8Test$2.class
@@ -259,6 +260,7 @@ org\openmrs\module\webservices\rest\web\v1_0\controller\openmrs1_9\ProviderAttri
 org\openmrs\module\webservices\rest\web\v1_0\controller\openmrs2_0\ConceptController2_0Test.class
 org\openmrs\module\webservices\rest\web\v1_0\controller\openmrs1_9\VisitAttributeTypeController1_9Test.class
 org\openmrs\module\webservices\rest\web\v1_0\resource\openmrs1_9\EncounterRoleResource1_9Test.class
+org\openmrs\module\webservices\rest\web\v1_0\controller\openmrs1_9\SessionControllerLoggingTest.class
 org\openmrs\module\webservices\rest\web\v1_0\resource\openmrs1_10\OrderTypeResource1_10Test.class
 org\openmrs\module\webservices\rest\web\v1_0\controller\openmrs2_5\OrderAttributeTypeController2_5Test.class
 org\openmrs\module\webservices\rest\web\v1_0\resource\openmrs1_8\PrivilegeResource1_8Test.class
