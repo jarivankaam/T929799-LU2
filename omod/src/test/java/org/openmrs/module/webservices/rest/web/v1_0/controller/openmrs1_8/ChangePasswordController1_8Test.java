@@ -28,6 +28,8 @@ import org.openmrs.util.PrivilegeConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockHttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 public class ChangePasswordController1_8Test extends RestControllerTestUtils {
 	
@@ -151,6 +153,23 @@ public class ChangePasswordController1_8Test extends RestControllerTestUtils {
 		
 		handle(newPostRequest(PASSWORD_URI + "/" + "someRandomUserUuid", "{\"newPassword\":\"" + newPassword + "\"}"));
 	}
+
+	@Test
+    public void changeOwnPassword_shouldReturnForbiddenWhenAnonymous() throws Exception {
+        Context.logout();
+        MockHttpServletRequest request = newPostRequest(PASSWORD_URI, "{\"newPassword\":\"Password123\",\"oldPassword\":\"OldPassword123\"}");
+        MockHttpServletResponse response = handle(request);
+        assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+    }
+
+    @Test
+    public void changeOthersPassword_shouldReturnForbiddenWhenLackingPrivilege() throws Exception {
+        setUpUser("daemon");
+        
+        MockHttpServletRequest request = newPostRequest(PASSWORD_URI + "/" + org.openmrs.module.webservices.rest.web.RestTestConstants1_8.USER_UUID, "{\"newPassword\":\"NewPassword123\"}");
+        MockHttpServletResponse response = handle(request);
+        assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+    }
 	
 	private User setUpUser(String userName) {
 		User user = service.getUserByUsername(userName);
