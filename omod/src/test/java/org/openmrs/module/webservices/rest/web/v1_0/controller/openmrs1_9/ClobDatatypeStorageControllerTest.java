@@ -19,6 +19,8 @@ import org.openmrs.api.context.Context;
 import org.openmrs.api.db.ClobDatatypeStorage;
 import org.openmrs.module.webservices.rest.web.RestTestConstants1_9;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.MainResourceControllerTest;
+import org.openmrs.util.PrivilegeConstants;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.mock.web.MockMultipartHttpServletRequest;
@@ -94,6 +96,43 @@ public class ClobDatatypeStorageControllerTest extends MainResourceControllerTes
 	public void shouldReturnHTTP404ForNonExistenceClobdata() throws Exception {
 		MockHttpServletResponse response = handle(newGetRequest(getURI() + "/non-existence-uuid"));
 		Assert.assertEquals(HttpServletResponse.SC_NOT_FOUND, response.getStatus());
+	}
+
+	@Test
+	public void create_shouldReturnForbiddenWhenAnonymous() throws Exception {
+		Context.logout();
+		MockHttpServletRequest request = newRequest(RequestMethod.POST, getURI());
+		MockHttpServletResponse response = handle(request);
+		Assert.assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus()); // 403
+	}
+
+	@Test
+	public void create_shouldAllowAccessWhenUserHasAddObs() throws Exception {
+		Context.logout();
+		Context.addProxyPrivilege(PrivilegeConstants.ADD_OBS);
+		try {
+			MockHttpServletRequest request = newRequest(RequestMethod.POST, getURI());
+			MockHttpServletResponse response = handle(request);
+			Assert.assertNotEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+		} finally {
+			Context.removeProxyPrivilege(PrivilegeConstants.ADD_OBS);
+		}
+	}
+
+	@Test
+	public void retrieve_shouldReturnForbiddenWhenAnonymous() throws Exception {
+		Context.logout();
+		MockHttpServletRequest request = newGetRequest(getURI() + "/" + RestTestConstants1_9.CLOBDATATYPESTORAGE_RESOURCE_UUID);
+		MockHttpServletResponse response = handle(request);
+		Assert.assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus()); // 403
+	}
+
+	@Test
+	public void delete_shouldReturnForbiddenWhenAnonymous() throws Exception {
+		Context.logout();
+		MockHttpServletRequest request = newDeleteRequest(getURI() + "/" + RestTestConstants1_9.CLOBDATATYPESTORAGE_RESOURCE_UUID);
+		MockHttpServletResponse response = handle(request);
+		Assert.assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus()); // 403
 	}
 	
 	@Override
