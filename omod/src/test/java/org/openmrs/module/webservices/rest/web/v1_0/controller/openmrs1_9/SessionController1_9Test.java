@@ -178,6 +178,29 @@ public class SessionController1_9Test extends BaseModuleWebContextSensitiveTest 
 		Assert.assertTrue(responseLoc.toString() + " should contain 'display=Xanadu'",
 				responseLoc.toString().contains("display=Xanadu"));
 	}
+
+	@Test
+    public void getDiagnostics_shouldReturnForbiddenWhenAnonymous() throws Exception {
+       Context.logout();
+       try {
+          controller.getDiagnostics(null);
+          Assert.fail("De security check had dit moeten blokkeren!");
+       } catch (org.openmrs.api.APIAuthenticationException e) {
+          Assert.assertTrue(true);
+       }
+    }
+
+    @Test
+    public void getDiagnostics_shouldAllowAccessWhenUserIsAdmin() throws Exception {
+       Context.logout();
+       Context.addProxyPrivilege(org.openmrs.util.PrivilegeConstants.VIEW_ADMIN_FUNCTIONS);
+       try {
+          Object ret = controller.getDiagnostics(null);
+          Assert.assertNotNull(ret);
+       } finally {
+          Context.removeProxyPrivilege(org.openmrs.util.PrivilegeConstants.VIEW_ADMIN_FUNCTIONS);
+       }
+    }
 	
 	@Test(expected = APIException.class)
 	public void post_shouldFailWhenSettingNonexistantLocation() throws Exception {
