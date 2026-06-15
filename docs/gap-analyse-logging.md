@@ -45,7 +45,7 @@
 | Ophalen medische meting | `GET /obs/{uuid}/value` | T9 | Nee | — | **Ja** (patiëntdata) | Kritiek |
 | Database-cache flush | `POST /cleardbcache` | T7 / T9 | Nee | — | Nee | Kritiek |
 | Zoekindex rebuild | `POST /searchindexupdate` | T7 / T9 | Nee | — | Nee | Kritiek |
-| Rate limit overschrijding | `POST /session`, REST API | T7 | nee | - | Nee | Non-compliant |
+| Rate limit overschrijding | `POST /session`, REST API | T7 | Nee | — | Nee | Non-compliant |
 | Interne serverfout (500) | Alle endpoints | T9 | Ja | ERROR | Ja (stacktrace) | Gedeeltelijk |
 | Client-fout (4xx, niet 401/403) | Alle endpoints | — | Ja | INFO | Nee | Gedeeltelijk |
 | Module opstarten/stoppen | — | — | Ja | INFO | Nee | Compliant |
