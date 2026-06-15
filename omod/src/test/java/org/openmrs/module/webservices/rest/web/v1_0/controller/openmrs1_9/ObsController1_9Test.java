@@ -324,6 +324,27 @@ public class ObsController1_9Test extends MainResourceControllerTest {
     	assertEquals(obs.getUuid(), PropertyUtils.getProperty(result, "uuid"));
     }
 
+	@Test
+    public void getComplexFile_shouldReturnForbiddenWhenAnonymous() throws Exception {
+       Context.logout();
+       MockHttpServletRequest request = newGetRequest(getURI() + "/" + getUuid() + "/value");
+       MockHttpServletResponse response = handle(request);
+       Assert.assertEquals(javax.servlet.http.HttpServletResponse.SC_FORBIDDEN, response.getStatus()); // 403
+    }
+
+    @Test
+    public void getComplexFile_shouldAllowAccessWhenUserHasGetObs() throws Exception {
+       Context.logout();
+       Context.addProxyPrivilege(org.openmrs.util.PrivilegeConstants.GET_OBS);
+       try {
+          MockHttpServletRequest request = newGetRequest(getURI() + "/" + getUuid() + "/value");
+          MockHttpServletResponse response = handle(request);
+          Assert.assertNotEquals(javax.servlet.http.HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+       } finally {
+          Context.removeProxyPrivilege(org.openmrs.util.PrivilegeConstants.GET_OBS);
+       }
+    }
+
     private ConceptComplex newConceptComplex() {
 		setupBinaryDataHandler();
 
