@@ -43,6 +43,7 @@ public class ChangePasswordController1_8 extends BaseRestController {
 	@Qualifier("userService")
 	@Autowired
 	private UserService userService;
+	//deze comment gaat weer weg
 	
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseStatus(HttpStatus.OK)

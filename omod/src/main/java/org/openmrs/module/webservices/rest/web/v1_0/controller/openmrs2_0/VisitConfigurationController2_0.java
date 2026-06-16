@@ -79,15 +79,16 @@ public class VisitConfigurationController2_0 extends BaseRestController {
 		VisitService visitService = Context.getVisitService();
 		SchedulerService schedulerService = Context.getSchedulerService();
 
-		// validate
-		if (newConfiguration.getEnableVisits() && StringUtils.isEmpty(newConfiguration.getEncounterVisitsAssignmentHandler())) {
+		boolean isEnabled = (newConfiguration.getEnableVisits() != null) ? newConfiguration.getEnableVisits() : false;
+
+		if (isEnabled && StringUtils.isEmpty(newConfiguration.getEncounterVisitsAssignmentHandler())) {
 			throw new IllegalRequestException("Encounter Visit assignment handler cannot be empty");
 		}
 
 		administrationService
-				.setGlobalProperty(OpenmrsConstants.GLOBAL_PROPERTY_ENABLE_VISITS, Boolean.toString(newConfiguration.getEnableVisits()));
+				.setGlobalProperty(OpenmrsConstants.GLOBAL_PROPERTY_ENABLE_VISITS, Boolean.toString(isEnabled));
 
-		if (newConfiguration.getEnableVisits()) {
+		if (isEnabled) {
 			String newEncounterVisitsAssignmentHandler = newConfiguration.getEncounterVisitsAssignmentHandler();
 			if (isEncounterVisitsAssignmentHandlerValid(newEncounterVisitsAssignmentHandler, encounterService)) {
 				administrationService
@@ -97,7 +98,10 @@ public class VisitConfigurationController2_0 extends BaseRestController {
 						"Provided encounterVisitsAssignmentHandler class " + newEncounterVisitsAssignmentHandler + " does not exist.");
 			}
 		}
-		updateGetAutoCloseVisitsTaskStartedValue(schedulerService, newConfiguration.getStartAutoCloseVisitsTask());
+
+		Boolean autoCloseStarted = (newConfiguration.getStartAutoCloseVisitsTask() != null) ? newConfiguration.getStartAutoCloseVisitsTask() : false;
+		updateGetAutoCloseVisitsTaskStartedValue(schedulerService, autoCloseStarted);
+
 		updateVisitTypesToAutoCloseValue(administrationService, visitService, newConfiguration.getVisitTypesToAutoClose());
 	}
 
