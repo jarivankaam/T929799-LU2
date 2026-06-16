@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_9.SystemSettingController1_9Test
 -------------------------------------------------------------------------------
-Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.113 s -- in org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_9.SystemSettingController1_9Test
+Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.146 s -- in org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_9.SystemSettingController1_9Test

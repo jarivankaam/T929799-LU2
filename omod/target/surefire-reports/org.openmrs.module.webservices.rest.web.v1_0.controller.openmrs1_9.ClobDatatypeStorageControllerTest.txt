@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_9.ClobDatatypeStorageControllerTest
 -------------------------------------------------------------------------------
-Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.798 s -- in org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_9.ClobDatatypeStorageControllerTest
+Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.533 s -- in org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_9.ClobDatatypeStorageControllerTest
