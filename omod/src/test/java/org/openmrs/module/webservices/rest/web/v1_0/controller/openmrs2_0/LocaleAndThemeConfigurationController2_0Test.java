@@ -20,6 +20,7 @@ import org.openmrs.scheduler.SchedulerException;
 import org.openmrs.util.OpenmrsConstants;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.junit.Assert;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -27,52 +28,80 @@ import static org.junit.Assert.assertNull;
 
 public class LocaleAndThemeConfigurationController2_0Test extends RestControllerTestUtils {
 
-	private AdministrationService administrationService;
+    private AdministrationService administrationService;
 
-	@Before
-	public void before() throws SchedulerException {
-		administrationService = Context.getAdministrationService();
-	}
+    @Before
+    public void before() throws SchedulerException {
+        administrationService = Context.getAdministrationService();
+    }
 
-	@Test
-	public void shouldGetCurrentConfiguration() throws Exception {
-		// set initial configuration
-		administrationService.setGlobalProperty(OpenmrsConstants.GLOBAL_PROPERTY_DEFAULT_LOCALE, "en_GB");
-		administrationService.setGlobalProperty(OpenmrsConstants.GLOBAL_PROPERTY_DEFAULT_THEME, "green");
+    @Test
+    public void shouldGetCurrentConfiguration() throws Exception {
+        // set initial configuration
+        administrationService.setGlobalProperty(OpenmrsConstants.GLOBAL_PROPERTY_DEFAULT_LOCALE, "en_GB");
+        administrationService.setGlobalProperty(OpenmrsConstants.GLOBAL_PROPERTY_DEFAULT_THEME, "green");
 
-		// make GET call
-		MockHttpServletRequest req = request(RequestMethod.GET, getURI());
-		SimpleObject result = deserialize(handle(req));
+        // make GET call
+        MockHttpServletRequest req = request(RequestMethod.GET, getURI());
+        SimpleObject result = deserialize(handle(req));
 
-		// assert response
-		assertNotNull(result);
-		assertEquals("en_GB", PropertyUtils.getProperty(result, "defaultLocale"));
-		assertEquals("green", PropertyUtils.getProperty(result, "defaultTheme"));
-	}
+        // assert response
+        assertNotNull(result);
+        assertEquals("en_GB", PropertyUtils.getProperty(result, "defaultLocale"));
+        assertEquals("green", PropertyUtils.getProperty(result, "defaultTheme"));
+    }
 
-	@Test
-	public void shouldUpdateCurrentConfiguration() throws Exception {
-		// assert initial configuration
-		MockHttpServletRequest req = request(RequestMethod.GET, getURI());
-		SimpleObject result = deserialize(handle(req));
-		assertNotNull(result);
-		assertNull(PropertyUtils.getProperty(result, "defaultLocale"));
-		assertNull(PropertyUtils.getProperty(result, "defaultTheme"));
+    @Test
+    public void shouldUpdateCurrentConfiguration() throws Exception {
+        // assert initial configuration
+        MockHttpServletRequest req = request(RequestMethod.GET, getURI());
+        SimpleObject result = deserialize(handle(req));
+        assertNotNull(result);
+        assertNull(PropertyUtils.getProperty(result, "defaultLocale"));
+        assertNull(PropertyUtils.getProperty(result, "defaultTheme"));
 
-		// update configuration
-		String json = "{\"defaultLocale\": \"en_GB\",\"defaultTheme\": \"purple\"}";
-		handle(newPostRequest(getURI(), json));
+        // update configuration
+        String json = "{\"defaultLocale\": \"en_GB\",\"defaultTheme\": \"purple\"}";
+        handle(newPostRequest(getURI(), json));
 
-		// make POST call
-		result = deserialize(handle(req));
+        // make POST call
+        result = deserialize(handle(req));
 
-		// assert response
-		assertNotNull(result);
-		assertEquals("en_GB", PropertyUtils.getProperty(result, "defaultLocale"));
-		assertEquals("purple", PropertyUtils.getProperty(result, "defaultTheme"));
-	}
+        // assert response
+        assertNotNull(result);
+        assertEquals("en_GB", PropertyUtils.getProperty(result, "defaultLocale"));
+        assertEquals("purple", PropertyUtils.getProperty(result, "defaultTheme"));
+    }
 
-	private String getURI() {
-		return "localeandthemeconfiguration";
-	}
+    @Test
+    public void getCurrentConfiguration_shouldReturnForbiddenWhenAnonymous() throws Exception {
+        java.lang.reflect.Method getMethod = LocaleAndThemeConfigurationController2_0.class.getMethod("getCurrentConfiguration");
+        
+        Assert.assertTrue("The getCurrentConfiguration method must have the @Authorized annotation", 
+            getMethod.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
+            
+        org.openmrs.annotation.Authorized methodAuth = getMethod.getAnnotation(org.openmrs.annotation.Authorized.class);
+        java.util.List<String> privileges = java.util.Arrays.asList(methodAuth.value());
+        
+        Assert.assertTrue("GET method must require VIEW_ADMIN_FUNCTIONS privilege", 
+            privileges.contains(org.openmrs.util.PrivilegeConstants.VIEW_ADMIN_FUNCTIONS));
+    }
+
+    @Test
+    public void updateCurrentConfiguration_shouldReturnForbiddenWhenAnonymous() throws Exception {
+        java.lang.reflect.Method postMethod = LocaleAndThemeConfigurationController2_0.class.getMethod("updateCurrentConfiguration", org.openmrs.module.webservices.rest.web.v1_0.wrapper.LocaleAndThemeConfiguration.class);
+        
+        Assert.assertTrue("The updateCurrentConfiguration method must have the @Authorized annotation", 
+            postMethod.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
+            
+        org.openmrs.annotation.Authorized methodAuth = postMethod.getAnnotation(org.openmrs.annotation.Authorized.class);
+        java.util.List<String> privileges = java.util.Arrays.asList(methodAuth.value());
+        
+        Assert.assertTrue("POST method must require VIEW_ADMIN_FUNCTIONS privilege", 
+            privileges.contains(org.openmrs.util.PrivilegeConstants.VIEW_ADMIN_FUNCTIONS));
+    }
+
+    private String getURI() {
+        return "localeandthemeconfiguration";
+    }
 }

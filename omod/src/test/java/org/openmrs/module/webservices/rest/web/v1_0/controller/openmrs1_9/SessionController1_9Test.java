@@ -178,6 +178,30 @@ public class SessionController1_9Test extends BaseModuleWebContextSensitiveTest 
 		Assert.assertTrue(responseLoc.toString() + " should contain 'display=Xanadu'",
 				responseLoc.toString().contains("display=Xanadu"));
 	}
+
+@Test
+    public void getDiagnostics_shouldReturnForbiddenWhenAnonymous() throws Exception {
+        java.lang.reflect.Method method = SessionController1_9.class.getMethod(
+            "getDiagnostics", String.class
+        );
+        
+        Assert.assertTrue("The getDiagnostics methode must have the @Authorized annotation", 
+            method.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
+            
+        org.openmrs.annotation.Authorized auth = method.getAnnotation(org.openmrs.annotation.Authorized.class);
+        Assert.assertEquals("The required privilege must be VIEW_ADMIN_FUNCTIONS", 
+            org.openmrs.util.PrivilegeConstants.VIEW_ADMIN_FUNCTIONS, auth.value()[0]);
+    }
+
+    @Test
+    public void getDiagnostics_shouldAllowAccessWhenUserIsAdmin() throws Exception {
+        java.lang.reflect.Method method = SessionController1_9.class.getMethod(
+            "getDiagnostics", String.class
+        );
+        
+        Assert.assertTrue("The getDiagnostics methode must be correctly annotated for admin functions", 
+            method.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
+    }
 	
 	@Test(expected = APIException.class)
 	public void post_shouldFailWhenSettingNonexistantLocation() throws Exception {

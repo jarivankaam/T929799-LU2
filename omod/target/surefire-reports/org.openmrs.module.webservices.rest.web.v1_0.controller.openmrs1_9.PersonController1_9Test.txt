@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_9.PersonController1_9Test
--------------------------------------------------------------------------------
-Tests run: 26, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.190 s -- in org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_9.PersonController1_9Test

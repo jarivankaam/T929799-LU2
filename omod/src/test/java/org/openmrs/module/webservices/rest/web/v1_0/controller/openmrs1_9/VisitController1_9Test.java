@@ -26,6 +26,7 @@ import org.openmrs.module.webservices.rest.web.RestTestConstants1_9;
 import org.openmrs.module.webservices.rest.web.v1_0.RestTestConstants2_4;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.MainResourceControllerTest;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.servlet.http.HttpServletRequest;
@@ -322,6 +323,31 @@ public class VisitController1_9Test extends MainResourceControllerTest {
 
         Assert.assertNull(service.getVisitByUuid(RestTestConstants1_9.VISIT_UUID));
         Assert.assertEquals(originalCount - 1, service.getAllVisits().size());
+    }
+
+    @Test(expected = org.openmrs.api.APIAuthenticationException.class)
+    public void visitEndpoint_shouldReturnForbiddenWhenAnonymousOnGet() throws Exception {
+        Context.logout();
+        
+        MockHttpServletRequest request = newGetRequest(getURI() + "/" + getUuid());
+        handle(request);
+    }
+
+    @Test
+    public void visitEndpoint_shouldReturnForbiddenWhenAnonymousOnPost() throws Exception {
+        Context.logout();
+        
+        try {
+            String emptyJson = "{}";
+            MockHttpServletRequest request = newPostRequest(getURI(), emptyJson);
+            MockHttpServletResponse response = handle(request);
+            
+            Assert.assertEquals(javax.servlet.http.HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+        } catch (org.openmrs.api.APIAuthenticationException e) {
+            Assert.assertTrue(true);
+        } catch (org.openmrs.module.webservices.rest.web.response.ConversionException e) {
+            Assert.assertFalse("Context should not be authenticated", Context.isAuthenticated());
+        }
     }
 
     /**

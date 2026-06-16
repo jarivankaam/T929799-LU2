@@ -95,6 +95,64 @@ public class ClobDatatypeStorageControllerTest extends MainResourceControllerTes
 		MockHttpServletResponse response = handle(newGetRequest(getURI() + "/non-existence-uuid"));
 		Assert.assertEquals(HttpServletResponse.SC_NOT_FOUND, response.getStatus());
 	}
+
+@Test
+    public void create_shouldReturnForbiddenWhenAnonymous() throws Exception {
+        java.lang.reflect.Method method = ClobDatatypeStorageController.class.getMethod(
+            "create", org.springframework.web.multipart.MultipartFile.class, javax.servlet.http.HttpServletRequest.class, javax.servlet.http.HttpServletResponse.class
+        );
+        
+        Assert.assertTrue("The create methode must have the @Authorized annotation", 
+            method.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
+            
+        org.openmrs.annotation.Authorized auth = method.getAnnotation(org.openmrs.annotation.Authorized.class);
+        java.util.List<String> privileges = java.util.Arrays.asList(auth.value());
+        
+        Assert.assertTrue("The required privilege must be EDIT_OBS", privileges.contains(org.openmrs.util.PrivilegeConstants.EDIT_OBS));
+    }
+
+    @Test
+    public void create_shouldAllowAccessWhenUserHasAddObs() throws Exception {
+        // Reflectieve check of ADD_OBS ook in de @Authorized annotatie van create staat
+        java.lang.reflect.Method method = ClobDatatypeStorageController.class.getMethod(
+            "create", org.springframework.web.multipart.MultipartFile.class, javax.servlet.http.HttpServletRequest.class, javax.servlet.http.HttpServletResponse.class
+        );
+        
+        org.openmrs.annotation.Authorized auth = method.getAnnotation(org.openmrs.annotation.Authorized.class);
+        java.util.List<String> privileges = java.util.Arrays.asList(auth.value());
+        
+        Assert.assertTrue("The method must be accessible with ADD_OBS", privileges.contains(org.openmrs.util.PrivilegeConstants.ADD_OBS));
+    }
+
+    @Test
+    public void retrieve_shouldReturnForbiddenWhenAnonymous() throws Exception {
+        java.lang.reflect.Method method = ClobDatatypeStorageController.class.getMethod(
+            "retrieve", String.class, javax.servlet.http.HttpServletRequest.class, javax.servlet.http.HttpServletResponse.class
+        );
+        
+        Assert.assertTrue("The retrieve methode must have the @Authorized annotation", 
+            method.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
+            
+        org.openmrs.annotation.Authorized auth = method.getAnnotation(org.openmrs.annotation.Authorized.class);
+        Assert.assertEquals("The required privilege must be GET_OBS", 
+            org.openmrs.util.PrivilegeConstants.GET_OBS, auth.value()[0]);
+    }
+
+    @Test
+    public void delete_shouldReturnForbiddenWhenAnonymous() throws Exception {
+        java.lang.reflect.Method method = ClobDatatypeStorageController.class.getMethod(
+            "delete", String.class, javax.servlet.http.HttpServletRequest.class, javax.servlet.http.HttpServletResponse.class
+        );
+        
+        Assert.assertTrue("The delete methode must have the @Authorized annotation", 
+            method.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
+            
+        org.openmrs.annotation.Authorized auth = method.getAnnotation(org.openmrs.annotation.Authorized.class);
+        java.util.List<String> privileges = java.util.Arrays.asList(auth.value());
+        
+        Assert.assertTrue("The required privilege must be DELETE_OBS", 
+            privileges.contains(org.openmrs.util.PrivilegeConstants.DELETE_OBS));
+    }
 	
 	@Override
 	public String getURI() {

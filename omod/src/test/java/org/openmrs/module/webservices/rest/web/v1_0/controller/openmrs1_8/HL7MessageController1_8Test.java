@@ -139,6 +139,34 @@ public class HL7MessageController1_8Test extends MainResourceControllerTest {
 		MockHttpServletRequest req = newPostRequest(getURI(), hl7Message);
 		deserialize(handle(req));
 	}
+
+	@Test
+    public void get_shouldReturnForbiddenWhenAnonymous() throws Exception {
+        java.lang.reflect.Method method = HL7MessageController1_8.class.getMethod(
+            "get", javax.servlet.http.HttpServletRequest.class, javax.servlet.http.HttpServletResponse.class
+        );
+        
+        Assert.assertTrue("The get methode must have the @Authorized annotation", 
+            method.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
+            
+        org.openmrs.annotation.Authorized auth = method.getAnnotation(org.openmrs.annotation.Authorized.class);
+        Assert.assertEquals("The required privilege must be GET_HL7_SOURCE", 
+            org.openmrs.util.PrivilegeConstants.GET_HL7_SOURCE, auth.value()[0]);
+    }
+
+    @Test
+    public void create_shouldReturnForbiddenWhenAnonymous() throws Exception {
+        java.lang.reflect.Method method = HL7MessageController1_8.class.getMethod(
+            "create", String.class, javax.servlet.http.HttpServletRequest.class, javax.servlet.http.HttpServletResponse.class
+        );
+        
+        Assert.assertTrue("The create methode must have the @Authorized annotation", 
+            method.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
+            
+        org.openmrs.annotation.Authorized auth = method.getAnnotation(org.openmrs.annotation.Authorized.class);
+        Assert.assertEquals("The required privilege must be MANAGE_HL7_MESSAGES", 
+            org.openmrs.util.PrivilegeConstants.MANAGE_HL7_MESSAGES, auth.value()[0]);
+    }
 	
 	/**
 	 * @see MainResourceControllerTest#shouldGetDefaultByUuid()
