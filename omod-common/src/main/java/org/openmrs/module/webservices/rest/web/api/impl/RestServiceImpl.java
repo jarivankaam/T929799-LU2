@@ -26,6 +26,8 @@ import org.openmrs.api.APIException;
 import org.openmrs.module.ModuleUtil;
 import org.openmrs.module.webservices.rest.web.OpenmrsClassScanner;
 import org.openmrs.module.webservices.rest.web.RestConstants;
+import org.openmrs.module.webservices.rest.web.resource.api.ResourceFactory;
+import org.openmrs.module.webservices.rest.web.resource.impl.ScanningResourceFactory;
 import org.openmrs.module.webservices.rest.web.annotation.SubResource;
 import org.openmrs.module.webservices.rest.web.api.RestHelperService;
 import org.openmrs.module.webservices.rest.web.api.RestService;
@@ -61,23 +63,33 @@ public class RestServiceImpl implements RestService {
 	private volatile List<SearchHandler> allSearchHandlers;
 	
 	private RestHelperService restHelperService;
-	
+
+	private ResourceFactory resourceFactory;
+
 	private OpenmrsClassScanner openmrsClassScanner;
 
 	private ExecutorService executorService;
-	
+
 	public RestHelperService getRestHelperService() {
 		return restHelperService;
 	}
-	
+
 	public void setRestHelperService(RestHelperService restHelperService) {
 		this.restHelperService = restHelperService;
 	}
-	
+
+	public ResourceFactory getResourceFactory() {
+		return resourceFactory;
+	}
+
+	public void setResourceFactory(ResourceFactory resourceFactory) {
+		this.resourceFactory = resourceFactory;
+	}
+
 	public OpenmrsClassScanner getOpenmrsClassScanner() {
 		return openmrsClassScanner;
 	}
-	
+
 	public void setOpenmrsClassScanner(OpenmrsClassScanner openmrsClassScanner) {
 		this.openmrsClassScanner = openmrsClassScanner;
 	}
@@ -166,7 +178,10 @@ public class RestServiceImpl implements RestService {
 		
 		List<Class<? extends Resource>> resources;
 		try {
-			resources = openmrsClassScanner.getClasses(Resource.class, true);
+			ResourceFactory factory = resourceFactory != null
+			        ? resourceFactory
+			        : new ScanningResourceFactory(openmrsClassScanner);
+			resources = factory.getResourceClasses();
 		}
 		catch (IOException e) {
 			throw new APIException("Cannot access REST resources", e);
