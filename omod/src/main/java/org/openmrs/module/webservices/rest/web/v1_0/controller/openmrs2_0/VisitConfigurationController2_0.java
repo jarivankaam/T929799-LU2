@@ -14,6 +14,7 @@ import org.apache.commons.lang.StringUtils;
 import org.openmrs.BaseOpenmrsMetadata;
 import org.openmrs.BaseOpenmrsObject;
 import org.openmrs.VisitType;
+import org.openmrs.annotation.Authorized;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.VisitService;
@@ -46,6 +47,7 @@ import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/visitconfiguration")
+@Authorized({PrivilegeConstants.CONFIGURE_VISITS})
 public class VisitConfigurationController2_0 extends BaseRestController {
 
 	@RequestMapping(method = RequestMethod.GET)
@@ -69,6 +71,7 @@ public class VisitConfigurationController2_0 extends BaseRestController {
 
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseStatus(HttpStatus.OK)
+	@Authorized({PrivilegeConstants.CONFIGURE_VISITS})
 	public void updateCurrentConfiguration(@RequestBody VisitConfiguration newConfiguration) throws SchedulerException {
 		Context.requirePrivilege(PrivilegeConstants.CONFIGURE_VISITS);
 		AdministrationService administrationService = Context.getAdministrationService();

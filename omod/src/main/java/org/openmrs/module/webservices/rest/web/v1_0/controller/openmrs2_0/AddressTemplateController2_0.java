@@ -9,6 +9,7 @@
  */
 package org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs2_0;
 
+import org.openmrs.annotation.Authorized;
 import org.openmrs.layout.address.AddressSupport;
 import org.openmrs.layout.address.AddressTemplate;
 import org.openmrs.module.webservices.rest.web.RestConstants;
@@ -19,6 +20,7 @@ import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestControlle
 import org.openmrs.module.webservices.rest.web.v1_0.helper.LayoutTemplateRepresentation;
 import org.openmrs.module.webservices.rest.web.v1_0.helper.LayoutTemplateProvider;
 import org.openmrs.serialization.SerializationException;
+import org.openmrs.util.PrivilegeConstants;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -31,6 +33,7 @@ public class AddressTemplateController2_0 extends BaseRestController {
 	
 	@RequestMapping(method = RequestMethod.GET)
 	@ResponseBody
+	@Authorized({PrivilegeConstants.GET_PATIENTS})
 	public Object get(WebRequest request) throws SerializationException {
 		LayoutTemplateProvider<AddressTemplate> provider = new AddressTemplateProvider();
 		AddressTemplate addressTemplate = provider.getDefaultLayoutTemplate();

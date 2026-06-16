@@ -10,9 +10,11 @@
 package org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_9;
 
 import org.apache.commons.io.IOUtils;
+import org.openmrs.annotation.Authorized;
 import org.openmrs.api.DatatypeService;
 import org.openmrs.api.db.ClobDatatypeStorage;
 import org.openmrs.module.webservices.rest.web.RestConstants;
+import org.openmrs.util.PrivilegeConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,6 +38,7 @@ public class ClobDatatypeStorageController {
 	
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
+	@Authorized({PrivilegeConstants.ADD_OBS, PrivilegeConstants.EDIT_OBS})
 	public String create(@RequestParam MultipartFile file, HttpServletRequest request, HttpServletResponse response)
 	        throws IOException {
 		ClobDatatypeStorage clobData = new ClobDatatypeStorage();
@@ -47,6 +50,7 @@ public class ClobDatatypeStorageController {
 	}
 	
 	@RequestMapping(method = RequestMethod.GET, value = "/{uuid}")
+	@Authorized({PrivilegeConstants.GET_OBS})
 	public void retrieve(@PathVariable("uuid") String uuid, HttpServletRequest request, HttpServletResponse response)
 	        throws Exception {
 		ClobDatatypeStorage clobData = datatypeService.getClobDatatypeStorageByUuid(uuid);
@@ -69,6 +73,7 @@ public class ClobDatatypeStorageController {
 	}
 	
 	@RequestMapping(method = RequestMethod.DELETE, value = "/{uuid}")
+	@Authorized({PrivilegeConstants.DELETE_OBS, PrivilegeConstants.PURGE_OBS})
 	public void delete(@PathVariable("uuid") String uuid, HttpServletRequest request, HttpServletResponse response) {
 		ClobDatatypeStorage clobData = datatypeService.getClobDatatypeStorageByUuid(uuid);
 		if (clobData != null) {

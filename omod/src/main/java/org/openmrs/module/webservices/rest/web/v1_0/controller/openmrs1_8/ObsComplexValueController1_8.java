@@ -13,11 +13,13 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.openmrs.Obs;
+import org.openmrs.annotation.Authorized;
 import org.openmrs.api.ObsService;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.response.IllegalRequestException;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
 import org.openmrs.obs.ComplexData;
+import org.openmrs.util.PrivilegeConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -38,6 +40,7 @@ public class ObsComplexValueController1_8 extends BaseRestController {
 	ObsService obsService;
 	
 	@RequestMapping(value = "/{uuid}/value", method = RequestMethod.GET)
+	@Authorized({PrivilegeConstants.GET_OBS})
 	public void getFile(@PathVariable("uuid") String uuid,
 	        @RequestParam(required = false, defaultValue = "RAW_VIEW") String view, HttpServletResponse response)
 	        throws Exception {

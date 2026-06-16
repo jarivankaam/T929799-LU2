@@ -10,10 +10,12 @@
 package org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_9;
 
 import org.openmrs.FormResource;
+import org.openmrs.annotation.Authorized;
 import org.openmrs.api.FormService;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.MainResourceController;
 import org.openmrs.module.webservices.rest.web.v1_0.resource.openmrs1_9.FormResourceResource1_9;
+import org.openmrs.util.PrivilegeConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -38,6 +40,7 @@ public class FormResourceController1_9 extends MainResourceController {
 	
 	@RequestMapping(method = RequestMethod.POST, headers = { "Content-Type=multipart/form-data" })
 	@ResponseBody
+	@Authorized({PrivilegeConstants.MANAGE_FORMS})
 	public Object createResourceValue(@PathVariable("uuid") String formUuid,
 	        @PathVariable("resourceUuid") String resourceUuid, @RequestParam("value") MultipartFile file,
 	        HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -57,6 +60,7 @@ public class FormResourceController1_9 extends MainResourceController {
 	}
 	
 	@RequestMapping(method = RequestMethod.GET)
+	@Authorized({PrivilegeConstants.GET_FORMS})
 	public void getResourceValue(@PathVariable("uuid") String formUuid, @PathVariable("resourceUuid") String resourceUuid,
 	        HttpServletRequest request, HttpServletResponse response) throws Exception {
 		//Get the resource
