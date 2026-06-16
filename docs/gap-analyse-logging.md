@@ -31,20 +31,24 @@
 
 ## Overzicht per event: huidig versus gewenst
 
-| Event | Gelogd? | Log-niveau | Gevoelige data | Compliant A.8.15? |
-|-------|---------|------------|----------------|-------------------|
-| Mislukte inlogpoging | Ja | DEBUG (onzichtbaar) | Nee | Non-compliant |
-| Geslaagde inlogpoging | Ja | DEBUG (onzichtbaar) | Nee | Non-compliant |
-| Uitloggen | Nee | — | Nee | Non-compliant |
-| 403 Forbidden | Nee | — | Nee | Non-compliant |
-| 401 Unauthorized | Nee | — | Nee | Non-compliant |
-| IP-adres geblokkeerd | Nee | — | Nee | Non-compliant |
-| Sessietime-out | Nee | — | Nee | Non-compliant |
-| Toegang /session/diag | Nee | — | **Ja** | Kritiek |
-| Rate limit overschrijding | Nee | — | Nee | Non-compliant |
-| Interne serverfout (500) | Ja | ERROR | Ja (stacktrace) | Gedeeltelijk |
-| Client-fout (4xx, niet 401/403) | Ja | INFO | Nee | Gedeeltelijk |
-| Module opstarten/stoppen | Ja | INFO | Nee | Compliant |
+| Event | Endpoint | Dreiging | Gelogd? | Log-niveau | Gevoelige data | Compliant A.8.15? |
+|-------|----------|----------|---------|------------|----------------|-------------------|
+| Mislukte inlogpoging | `POST /session` | T7 | Ja | DEBUG (onzichtbaar) | Nee | Non-compliant |
+| Geslaagde inlogpoging | `POST /session` | — | Ja | DEBUG (onzichtbaar) | Nee | Non-compliant |
+| Uitloggen | `DELETE /session` | — | Nee | — | Nee | Non-compliant |
+| 403 Forbidden | Alle beveiligde endpoints | T2, T9 | Nee | — | Nee | Non-compliant |
+| 401 Unauthorized | Alle beveiligde endpoints | T7, T9 | Nee | — | Nee | Non-compliant |
+| IP-adres geblokkeerd | Gateway (AuthorizationFilter) | T7 | Nee | — | Nee | Non-compliant |
+| Sessietime-out | Alle sessie-endpoints | — | Nee | — | Nee | Non-compliant |
+| Toegang /session/diag | `GET /session/diag` | T9 | Nee | — | **Ja** (rollen, privileges) | Kritiek |
+| Wissen medisch dossier | `DELETE /clobdata/{uuid}` | T2 / T9 | Nee | — | **Ja** (medische data) | Kritiek |
+| Ophalen medische meting | `GET /obs/{uuid}/value` | T9 | Nee | — | **Ja** (patiëntdata) | Kritiek |
+| Database-cache flush | `POST /cleardbcache` | T7 / T9 | Nee | — | Nee | Kritiek |
+| Zoekindex rebuild | `POST /searchindexupdate` | T7 / T9 | Nee | — | Nee | Kritiek |
+| Rate limit overschrijding | `POST /session`, REST API | T7 | Nee | — | Nee | Non-compliant |
+| Interne serverfout (500) | Alle endpoints | T9 | Ja | ERROR | Ja (stacktrace) | Gedeeltelijk |
+| Client-fout (4xx, niet 401/403) | Alle endpoints | — | Ja | INFO | Nee | Gedeeltelijk |
+| Module opstarten/stoppen | — | — | Ja | INFO | Nee | Compliant |
 
 ---
 
