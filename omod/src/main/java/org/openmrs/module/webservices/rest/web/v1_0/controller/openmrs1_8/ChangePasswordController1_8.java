@@ -35,65 +35,70 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.openmrs.module.webservices.rest.web.v1_0.dto.ChangeOwnPasswordRequest;
+import org.openmrs.module.webservices.rest.web.v1_0.dto.ChangeOtherPasswordRequest;
 
 @Controller
 @RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/password")
 public class ChangePasswordController1_8 extends BaseRestController {
-	
-	@Qualifier("userService")
-	@Autowired
-	private UserService userService;
-	
+
+	// @Autowired en @Qualifier zijn hier weggehaald om NullPointerExceptions te voorkomen
+
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseStatus(HttpStatus.OK)
 	@Authorized()
 	public void changeOwnPassword(@RequestBody Map<String, String> body) {
-		String oldPassword = body.get("oldPassword");
-		String newPassword = body.get("newPassword");
+		ChangeOwnPasswordRequest dto = new ChangeOwnPasswordRequest();
+		dto.setOldPassword(body.get("oldPassword"));
+		dto.setNewPassword(body.get("newPassword"));
+
+		String oldPassword = dto.getOldPassword();
+		String newPassword = dto.getNewPassword();
+
 		if (!Context.isAuthenticated()) {
 			throw new APIAuthenticationException("Must be authenticated to change your own password");
 		}
 		try {
 			Context.addProxyPrivilege(PrivilegeConstants.GET_GLOBAL_PROPERTIES);
-			userService.changePassword(oldPassword, newPassword);
+			// Gewijzigd naar de statische OpenMRS Context
+			Context.getUserService().changePassword(oldPassword, newPassword);
 		}
 		catch (APIException ex) {
-			// this happens if they give the wrong oldPassword
 			throw new ValidationException(ex.getMessage());
 		}
 		finally {
 			Context.removeProxyPrivilege(PrivilegeConstants.GET_GLOBAL_PROPERTIES);
 		}
 	}
-	
+
 	@RequestMapping(value = "/{userUuid}", method = RequestMethod.POST)
 	@ResponseStatus(HttpStatus.OK)
 	@Authorized({PrivilegeConstants.EDIT_USER_PASSWORDS})
-	public void changeOthersPassword(@PathVariable("userUuid") String userUuid, @RequestBody Map<String, String> body) {
-		String newPassword = body.get("newPassword");
+	public void changeOthersPassword(@PathVariable("userUuid") String userUuid, @RequestBody ChangeOtherPasswordRequest request) {
+		String newPassword = request.getNewPassword();
 		Context.addProxyPrivilege(PrivilegeConstants.GET_USERS);
 		User user;
 		try {
-			user = userService.getUserByUuid(userUuid);
+			// Gewijzigd naar de statische OpenMRS Context
+			user = Context.getUserService().getUserByUuid(userUuid);
 		}
 		finally {
 			Context.removeProxyPrivilege(PrivilegeConstants.GET_USERS);
 		}
-		
+
 		if (user == null || user.getUserId() == null) {
 			throw new NullPointerException();
 		} else {
-			userService.changePassword(user, newPassword);
+			// Gewijzigd naar de statische OpenMRS Context
+			Context.getUserService().changePassword(user, newPassword);
 		}
 	}
-	
-	// This probably belongs in the base class, but we don't want to test all the behaviors that would change
+
 	@ExceptionHandler(NullPointerException.class)
 	@ResponseBody
 	public SimpleObject handleNotFound(NullPointerException exception, HttpServletRequest request,
-	        HttpServletResponse response) {
+									   HttpServletResponse response) {
 		response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 		return RestUtil.wrapErrorResponse(exception, "User not found");
 	}
-	
 }

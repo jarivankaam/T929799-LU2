@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_9.EncounterController1_9Test
+-------------------------------------------------------------------------------
+Tests run: 18, Failures: 0, Errors: 0, Skipped: 2, Time elapsed: 3.187 s -- in org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_9.EncounterController1_9Test
