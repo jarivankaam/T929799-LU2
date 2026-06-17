@@ -13,6 +13,7 @@ import org.apache.commons.lang3.LocaleUtils;
 import org.openmrs.Location;
 import org.openmrs.Provider;
 import org.openmrs.User;
+import org.openmrs.annotation.Authorized;
 import org.openmrs.api.APIException;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.webservices.rest.SimpleObject;

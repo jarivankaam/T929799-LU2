@@ -9,6 +9,7 @@
  */
 package org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs2_0;
 
+import org.openmrs.annotation.Authorized;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.webservices.rest.web.ConversionUtil;
@@ -17,6 +18,7 @@ import org.openmrs.module.webservices.rest.web.representation.Representation;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
 import org.openmrs.module.webservices.rest.web.v1_0.wrapper.LocaleAndThemeConfiguration;
 import org.openmrs.util.OpenmrsConstants;
+import org.openmrs.util.PrivilegeConstants;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,6 +34,7 @@ public class LocaleAndThemeConfigurationController2_0 extends BaseRestController
 	@RequestMapping(method = RequestMethod.GET)
 	@ResponseStatus(HttpStatus.OK)
 	@ResponseBody
+	@Authorized({PrivilegeConstants.VIEW_ADMIN_FUNCTIONS})
 	public Object getCurrentConfiguration() {
 		AdministrationService administrationService = Context.getAdministrationService();
 		String theme = administrationService.getGlobalProperty(OpenmrsConstants.GLOBAL_PROPERTY_DEFAULT_THEME);
@@ -46,6 +49,7 @@ public class LocaleAndThemeConfigurationController2_0 extends BaseRestController
 
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseStatus(HttpStatus.OK)
+	@Authorized({PrivilegeConstants.VIEW_ADMIN_FUNCTIONS})
 	public void updateCurrentConfiguration(@RequestBody LocaleAndThemeConfiguration newConfiguration) {
 		AdministrationService administrationService = Context.getAdministrationService();
 		String theme = newConfiguration.getDefaultTheme();

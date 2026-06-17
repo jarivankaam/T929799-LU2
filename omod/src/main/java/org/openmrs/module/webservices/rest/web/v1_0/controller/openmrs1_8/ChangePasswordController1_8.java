@@ -13,6 +13,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.openmrs.User;
+import org.openmrs.annotation.Authorized;
 import org.openmrs.api.APIAuthenticationException;
 import org.openmrs.api.APIException;
 import org.openmrs.api.UserService;
@@ -42,9 +43,11 @@ public class ChangePasswordController1_8 extends BaseRestController {
 	@Qualifier("userService")
 	@Autowired
 	private UserService userService;
+	//deze comment gaat weer weg
 	
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseStatus(HttpStatus.OK)
+	@Authorized()
 	public void changeOwnPassword(@RequestBody Map<String, String> body) {
 		String oldPassword = body.get("oldPassword");
 		String newPassword = body.get("newPassword");
@@ -66,6 +69,7 @@ public class ChangePasswordController1_8 extends BaseRestController {
 	
 	@RequestMapping(value = "/{userUuid}", method = RequestMethod.POST)
 	@ResponseStatus(HttpStatus.OK)
+	@Authorized({PrivilegeConstants.EDIT_USER_PASSWORDS})
 	public void changeOthersPassword(@PathVariable("userUuid") String userUuid, @RequestBody Map<String, String> body) {
 		String newPassword = body.get("newPassword");
 		Context.addProxyPrivilege(PrivilegeConstants.GET_USERS);

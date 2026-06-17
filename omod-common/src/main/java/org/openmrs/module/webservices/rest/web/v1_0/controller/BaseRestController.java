@@ -105,11 +105,11 @@ public class BaseRestController {
 		response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 		return RestUtil.wrapErrorResponse(httpMessageNotReadableException, "");
 	}
-	
+
 	@ExceptionHandler(Exception.class)
 	@ResponseBody
 	public SimpleObject handleException(Exception ex, HttpServletRequest request, HttpServletResponse response)
-	        throws Exception {
+			throws Exception {
 		int errorCode = DEFAULT_ERROR_CODE;
 		String errorDetail = DEFAULT_ERROR_DETAIL;
 		ResponseStatus ann = ex.getClass().getAnnotation(ResponseStatus.class);
@@ -118,21 +118,34 @@ public class BaseRestController {
 			if (StringUtils.isNotEmpty(ann.reason())) {
 				errorDetail = ann.reason();
 			}
-			
+
 		} else if (RestUtil.hasCause(ex, APIAuthenticationException.class)) {
 			return apiAuthenticationExceptionHandler(ex, request, response);
 		} else if (ex.getClass() == HttpRequestMethodNotSupportedException.class) {
 			errorCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
+			errorDetail = "HTTP method not supported";
 		}
+
 		if (errorCode >= 500) {
-			// if it's a server error, we log it at a high level of importance
 			log.error(ex.getMessage(), ex);
 		} else {
-			// 4xx client errors are logged at a lower level of importance
 			log.info(ex.getMessage(), ex);
 		}
+
 		response.setStatus(errorCode);
-		return RestUtil.wrapErrorResponse(ex, errorDetail);
+
+
+		SimpleObject cleanErrorResponse = new SimpleObject();
+
+
+		SimpleObject errorDetails = new SimpleObject();
+		errorDetails.put("message", "Internal Server Error");
+		errorDetails.put("code", String.valueOf(errorCode));
+		errorDetails.put("detail", StringUtils.isNotEmpty(errorDetail) ? errorDetail : "An unexpected error occurred. Please contact your system administrator.");
+
+		cleanErrorResponse.put("error", errorDetails);
+
+		return cleanErrorResponse;
 	}
 	
 	private boolean shouldAddWWWAuthHeader(HttpServletRequest request) {

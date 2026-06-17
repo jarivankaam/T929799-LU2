@@ -15,9 +15,11 @@ import java.util.List;
 import java.util.Set;
 
 import org.openmrs.GlobalProperty;
+import org.openmrs.annotation.Authorized;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.webservices.rest.web.RestConstants;
+import org.openmrs.util.PrivilegeConstants;
 import org.openmrs.web.WebConstants;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.Errors;
@@ -33,6 +35,7 @@ import org.springframework.web.context.request.WebRequest;
  */
 @Controller("webservices.rest.SettingsFormController")
 @RequestMapping("/module/webservices/rest/settings.form")
+@Authorized({PrivilegeConstants.MANAGE_GLOBAL_PROPERTIES})
 public class SettingsFormController {
 	
 	@RequestMapping(method = RequestMethod.GET)

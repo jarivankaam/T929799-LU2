@@ -14,6 +14,7 @@ import org.apache.commons.lang.StringUtils;
 import org.openmrs.BaseOpenmrsMetadata;
 import org.openmrs.BaseOpenmrsObject;
 import org.openmrs.VisitType;
+import org.openmrs.annotation.Authorized;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.VisitService;
@@ -46,6 +47,7 @@ import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/visitconfiguration")
+@Authorized({PrivilegeConstants.CONFIGURE_VISITS})
 public class VisitConfigurationController2_0 extends BaseRestController {
 
 	@RequestMapping(method = RequestMethod.GET)
@@ -69,6 +71,7 @@ public class VisitConfigurationController2_0 extends BaseRestController {
 
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseStatus(HttpStatus.OK)
+	@Authorized({PrivilegeConstants.CONFIGURE_VISITS})
 	public void updateCurrentConfiguration(@RequestBody VisitConfiguration newConfiguration) throws SchedulerException {
 		Context.requirePrivilege(PrivilegeConstants.CONFIGURE_VISITS);
 		AdministrationService administrationService = Context.getAdministrationService();
@@ -76,15 +79,16 @@ public class VisitConfigurationController2_0 extends BaseRestController {
 		VisitService visitService = Context.getVisitService();
 		SchedulerService schedulerService = Context.getSchedulerService();
 
-		// validate
-		if (newConfiguration.getEnableVisits() && StringUtils.isEmpty(newConfiguration.getEncounterVisitsAssignmentHandler())) {
+		boolean isEnabled = (newConfiguration.getEnableVisits() != null) ? newConfiguration.getEnableVisits() : false;
+
+		if (isEnabled && StringUtils.isEmpty(newConfiguration.getEncounterVisitsAssignmentHandler())) {
 			throw new IllegalRequestException("Encounter Visit assignment handler cannot be empty");
 		}
 
 		administrationService
-				.setGlobalProperty(OpenmrsConstants.GLOBAL_PROPERTY_ENABLE_VISITS, Boolean.toString(newConfiguration.getEnableVisits()));
+				.setGlobalProperty(OpenmrsConstants.GLOBAL_PROPERTY_ENABLE_VISITS, Boolean.toString(isEnabled));
 
-		if (newConfiguration.getEnableVisits()) {
+		if (isEnabled) {
 			String newEncounterVisitsAssignmentHandler = newConfiguration.getEncounterVisitsAssignmentHandler();
 			if (isEncounterVisitsAssignmentHandlerValid(newEncounterVisitsAssignmentHandler, encounterService)) {
 				administrationService
@@ -94,7 +98,10 @@ public class VisitConfigurationController2_0 extends BaseRestController {
 						"Provided encounterVisitsAssignmentHandler class " + newEncounterVisitsAssignmentHandler + " does not exist.");
 			}
 		}
-		updateGetAutoCloseVisitsTaskStartedValue(schedulerService, newConfiguration.getStartAutoCloseVisitsTask());
+
+		Boolean autoCloseStarted = (newConfiguration.getStartAutoCloseVisitsTask() != null) ? newConfiguration.getStartAutoCloseVisitsTask() : false;
+		updateGetAutoCloseVisitsTaskStartedValue(schedulerService, autoCloseStarted);
+
 		updateVisitTypesToAutoCloseValue(administrationService, visitService, newConfiguration.getVisitTypesToAutoClose());
 	}
 
