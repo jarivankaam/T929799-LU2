@@ -52,11 +52,8 @@ public class AuthorizationFilterLoggingTest {
         response = new MockHttpServletResponse();
         chain = new MockFilterChain();
 
-        // Mock RestUtil zodat IP altijd toegestaan is
         mockedRestUtil = Mockito.mockStatic(RestUtil.class);
         mockedRestUtil.when(() -> RestUtil.isIpAllowed(Mockito.anyString())).thenReturn(true);
-
-        // Mock Context zodat isAuthenticated() false teruggeeft
         mockedContext = Mockito.mockStatic(Context.class);
         mockedContext.when(Context::isAuthenticated).thenReturn(false);
         mockedContext.when(() -> Context.authenticate("admin", "Admin123")).thenAnswer(inv -> null);
@@ -96,12 +93,12 @@ public class AuthorizationFilterLoggingTest {
                         && e.getFormattedMessage().contains("Successful login")
                         && e.getFormattedMessage().contains("admin"));
 
-        Assert.assertTrue("Geslaagde login moet gelogd worden op INFO-niveau met [SECURITY] tag", foundLog);
+        Assert.assertTrue("Successful login must be logged at INFO level with [SECURITY] tag", foundLog);
     }
 
     @Test
     public void doFilter_shouldLogFailedLoginAtWarnLevel() throws Exception {
-        request.addHeader("Authorization", encodeCredentials("admin", "foutWachtwoord"));
+        request.addHeader("Authorization", encodeCredentials("admin", "wrongPassword"));
         request.setRemoteAddr("127.0.0.1");
 
         filter.doFilter(request, response, chain);
@@ -113,40 +110,40 @@ public class AuthorizationFilterLoggingTest {
                         && e.getFormattedMessage().contains("Failed login")
                         && e.getFormattedMessage().contains("admin"));
 
-        Assert.assertTrue("Een mislukte inlogpoging moet gelogd worden op WARN-niveau", foundWarnLog);
+        Assert.assertTrue("A failed login attempt must be logged at WARN level", foundWarnLog);
     }
 
     @Test
     public void doFilter_shouldNotLogPasswordOnFailedLogin() throws Exception {
-        String geheimWachtwoord = "SuperGeheimWachtwoord123!";
-        request.addHeader("Authorization", encodeCredentials("admin", geheimWachtwoord));
+        String secretPassword = "SuperSecretPassword123!";
+        request.addHeader("Authorization", encodeCredentials("admin", secretPassword));
         request.setRemoteAddr("127.0.0.1");
 
         filter.doFilter(request, response, chain);
 
         boolean passwordInLogs = logAppender.list.stream()
-                .anyMatch(e -> e.getFormattedMessage().contains(geheimWachtwoord));
+                .anyMatch(e -> e.getFormattedMessage().contains(secretPassword));
 
-        Assert.assertFalse("Het wachtwoord mag NOOIT in de logs verschijnen", passwordInLogs);
+        Assert.assertFalse("The password must NEVER appear in the logs", passwordInLogs);
     }
 
     @Test
     public void doFilter_shouldNotLogPasswordOnSuccessfulLogin() throws Exception {
-        String wachtwoord = "Admin123";
-        request.addHeader("Authorization", encodeCredentials("admin", wachtwoord));
+        String password = "Admin123";
+        request.addHeader("Authorization", encodeCredentials("admin", password));
         request.setRemoteAddr("127.0.0.1");
 
         filter.doFilter(request, response, chain);
 
         boolean passwordInLogs = logAppender.list.stream()
-                .anyMatch(e -> e.getFormattedMessage().contains(wachtwoord));
+                .anyMatch(e -> e.getFormattedMessage().contains(password));
 
-        Assert.assertFalse("Het wachtwoord mag NOOIT in de logs verschijnen", passwordInLogs);
+        Assert.assertFalse("The password must NEVER appear in the logs", passwordInLogs);
     }
 
     @Test
     public void doFilter_shouldIncludeSecurityTagInAllSecurityLogs() throws Exception {
-        request.addHeader("Authorization", encodeCredentials("admin", "foutWachtwoord"));
+        request.addHeader("Authorization", encodeCredentials("admin", "wrongPassword"));
         request.setRemoteAddr("127.0.0.1");
 
         filter.doFilter(request, response, chain);
@@ -159,6 +156,6 @@ public class AuthorizationFilterLoggingTest {
                         || e.getFormattedMessage().contains("Session"))
                 .allMatch(e -> e.getFormattedMessage().contains("[SECURITY]"));
 
-        Assert.assertTrue("Alle security-logregels moeten de [SECURITY] tag bevatten", allTagged);
+        Assert.assertTrue("All security log entries must contain the [SECURITY] tag", allTagged);
     }
 }

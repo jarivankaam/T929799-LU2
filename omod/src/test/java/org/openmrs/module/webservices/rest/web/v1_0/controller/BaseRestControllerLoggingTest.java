@@ -21,14 +21,6 @@ import org.springframework.mock.web.MockHttpServletResponse;
 
 import javax.servlet.http.HttpServletResponse;
 
-/**
- * Tests voor de security-logging in {@link BaseRestController}.
- * Verifieert dat 401 en 403 responses correct worden gelogd.
- *
- * NB: BaseRestController gebruikt Apache Commons Logging. We testen het gedrag
- * via de HTTP-statuscodes en de response-body, aangezien Commons Logging
- * geen ingebouwde test-appender heeft zoals logback.
- */
 public class BaseRestControllerLoggingTest extends BaseModuleWebContextSensitiveTest {
 
     private BaseRestController controller;
@@ -46,34 +38,16 @@ public class BaseRestControllerLoggingTest extends BaseModuleWebContextSensitive
         request.setRequestURI("/openmrs/ws/rest/v1/patient");
     }
 
-    // =========================================================
-    // Tests: succesvolle acties (geen exception verwacht)
-    // =========================================================
-
-    /**
-     * Verifieert dat de controller correct een 403 Forbidden retourneert
-     * wanneer een ingelogde gebruiker onvoldoende rechten heeft.
-     * De logging wordt indirect bewezen doordat de code-branch met log.warn() wordt
-     * uitgevoerd.
-     */
     @Test
     public void apiAuthenticationExceptionHandler_shouldReturn403WhenAuthenticated() throws Exception {
         APIAuthenticationException ex = new APIAuthenticationException("Test exception");
 
         controller.apiAuthenticationExceptionHandler(ex, request, response);
 
-        Assert.assertEquals("Response moet 403 zijn voor ingelogde gebruiker",
+        Assert.assertEquals("Response must be 403 for an authenticated user",
                 HttpServletResponse.SC_FORBIDDEN, response.getStatus());
     }
 
-    // =========================================================
-    // Tests: mislukte acties
-    // =========================================================
-
-    /**
-     * Verifieert dat bij een 401 Unauthorized response de response-body
-     * de correcte foutmelding bevat zonder gevoelige data.
-     */
     @Test
     public void apiAuthenticationExceptionHandler_shouldReturn401WithCorrectMessage() throws Exception {
         Context.logout();
@@ -81,69 +55,48 @@ public class BaseRestControllerLoggingTest extends BaseModuleWebContextSensitive
 
         Object result = controller.apiAuthenticationExceptionHandler(ex, request, response);
 
-        Assert.assertEquals("Status moet 401 zijn",
+        Assert.assertEquals("Status must be 401",
                 HttpServletResponse.SC_UNAUTHORIZED, response.getStatus());
-        Assert.assertNotNull("Response body mag niet null zijn", result);
+        Assert.assertNotNull("Response body must not be null", result);
 
-        // Controleer dat de response-body geen stacktrace bevat
         String resultStr = result.toString();
-        Assert.assertFalse("Response mag geen Java stacktrace bevatten",
+        Assert.assertFalse("Response must not contain a Java stack trace",
                 resultStr.contains("at org.openmrs"));
     }
 
-    /**
-     * Verifieert dat het IP-adres van de aanvrager beschikbaar is in de request
-     * zodat de logging het IP correct kan vastleggen.
-     */
     @Test
     public void apiAuthenticationExceptionHandler_shouldHaveAccessToClientIp() throws Exception {
         Context.logout();
         APIAuthenticationException ex = new APIAuthenticationException("Unauthorized");
 
-        // Verifieer dat het request het IP-adres bevat dat gelogd zou worden
-        Assert.assertEquals("Request moet het IP-adres van de client bevatten",
+        Assert.assertEquals("Request must contain the client IP address",
                 "192.168.1.100", request.getRemoteAddr());
 
         controller.apiAuthenticationExceptionHandler(ex, request, response);
 
-        // Response mag niet het ruwe IP-adres bevatten (dat is voor de logs, niet de
-        // client)
         String resultStr = response.getContentAsString();
-        Assert.assertFalse("Het IP-adres mag niet in de HTTP-response verschijnen",
+        Assert.assertFalse("The client IP address must not appear in the HTTP response",
                 resultStr.contains("192.168.1.100"));
     }
 
-    // =========================================================
-    // Tests: afwezigheid van gevoelige data in response
-    // =========================================================
-
-    /**
-     * Verifieert dat de exception-message niet volledig wordt teruggestuurd
-     * naar de client bij een auth-fout. Gevoelige details horen in de logs,
-     * niet in de HTTP-response.
-     */
     @Test
     public void apiAuthenticationExceptionHandler_shouldNotLeakInternalDetailsToClient() throws Exception {
         Context.logout();
-        String geheimeInterneBoodschap = "database_password=SuperGeheim123";
-        APIAuthenticationException ex = new APIAuthenticationException(geheimeInterneBoodschap);
+        String secretInternalMessage = "database_password=SuperSecret123";
+        APIAuthenticationException ex = new APIAuthenticationException(secretInternalMessage);
 
         controller.apiAuthenticationExceptionHandler(ex, request, response);
 
         String responseBody = response.getContentAsString();
-        Assert.assertFalse("Interne details mogen niet in de HTTP-response verschijnen",
-                responseBody.contains(geheimeInterneBoodschap));
+        Assert.assertFalse("Internal details must not appear in the HTTP response",
+                responseBody.contains(secretInternalMessage));
     }
 
-    /**
-     * Verifieert dat de request-URI beschikbaar is voor logging maar niet
-     * op een onveilige manier wordt teruggestuurd naar de client.
-     */
     @Test
     public void apiAuthenticationExceptionHandler_shouldHaveAccessToRequestUri() throws Exception {
         APIAuthenticationException ex = new APIAuthenticationException("Unauthorized");
 
-        Assert.assertEquals("Request URI moet beschikbaar zijn voor logging",
+        Assert.assertEquals("Request URI must be available for logging",
                 "/openmrs/ws/rest/v1/patient", request.getRequestURI());
 
         Object result = controller.apiAuthenticationExceptionHandler(ex, request, response);

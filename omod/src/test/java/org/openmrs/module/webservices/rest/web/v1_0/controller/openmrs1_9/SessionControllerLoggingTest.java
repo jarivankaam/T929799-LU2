@@ -27,10 +27,6 @@ import org.springframework.mock.web.MockServletContext;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
-/**
- * Tests voor de logging in {@link SessionController1_9}.
- * Verifieert dat uitloggen correct wordt gelogd en geen gevoelige data bevat.
- */
 public class SessionControllerLoggingTest extends BaseModuleWebContextSensitiveTest {
 
 	private static final String SESSION_ID = "test-session-logging";
@@ -51,7 +47,6 @@ public class SessionControllerLoggingTest extends BaseModuleWebContextSensitiveT
 		mockRequest.setSession(new MockHttpSession(new MockServletContext(), SESSION_ID));
 		request = mockRequest;
 
-		// Koppel ListAppender aan de logger van SessionController1_9
 		controllerLogger = (Logger) LoggerFactory.getLogger(SessionController1_9.class);
 		logAppender = new ListAppender<>();
 		logAppender.start();
@@ -63,17 +58,9 @@ public class SessionControllerLoggingTest extends BaseModuleWebContextSensitiveT
 		controllerLogger.detachAppender(logAppender);
 	}
 
-	// =========================================================
-	// Tests: succesvolle acties
-	// =========================================================
-
-	/**
-	 * Verifieert dat uitloggen wordt gelogd op INFO-niveau
-	 * met de gebruikersnaam en de [SECURITY] tag.
-	 */
 	@Test
 	public void delete_shouldLogLogoutAtInfoLevel() {
-		Assert.assertTrue("Gebruiker moet ingelogd zijn voor de test", Context.isAuthenticated());
+		Assert.assertTrue("User must be logged in before the test", Context.isAuthenticated());
 		String expectedUsername = Context.getAuthenticatedUser().getUsername();
 
 		controller.delete(request);
@@ -85,40 +72,25 @@ public class SessionControllerLoggingTest extends BaseModuleWebContextSensitiveT
 				&& e.getFormattedMessage().contains("logged out")
 				&& e.getFormattedMessage().contains(expectedUsername));
 
-		Assert.assertTrue("Uitloggen moet gelogd worden op INFO-niveau met de gebruikersnaam",
-			foundLogoutLog);
+		Assert.assertTrue("Logout must be logged at INFO level with the username", foundLogoutLog);
 	}
 
-	/**
-	 * Verifieert dat de gebruiker daadwerkelijk uitgelogd is na delete()
-	 * (bestaande functionaliteitstest, gecombineerd met logging-check).
-	 */
 	@Test
 	public void delete_shouldLogoutAndLog() {
 		Assert.assertTrue(Context.isAuthenticated());
 
 		controller.delete(request);
 
-		// Gebruiker moet uitgelogd zijn
-		Assert.assertFalse("Gebruiker moet uitgelogd zijn na delete()", Context.isAuthenticated());
-		Assert.assertNull("Sessie moet ongeldig zijn na delete()", request.getSession(false));
+		Assert.assertFalse("User must be logged out after delete()", Context.isAuthenticated());
+		Assert.assertNull("Session must be invalidated after delete()", request.getSession(false));
 
-		// En er moet een logregel zijn
 		List<ILoggingEvent> logs = logAppender.list;
 		boolean hasSecurityLog = logs.stream()
 			.anyMatch(e -> e.getFormattedMessage().contains("[SECURITY]"));
 
-		Assert.assertTrue("Er moet een [SECURITY] logregel zijn na uitloggen", hasSecurityLog);
+		Assert.assertTrue("A [SECURITY] log entry must be present after logout", hasSecurityLog);
 	}
 
-	// =========================================================
-	// Tests: afwezigheid van gevoelige data
-	// =========================================================
-
-	/**
-	 * Verifieert dat bij uitloggen geen gevoelige sessiedata in de logs verschijnt.
-	 * Sessie-ID's mogen niet gelogd worden om session hijacking te voorkomen.
-	 */
 	@Test
 	public void delete_shouldNotLogSessionId() {
 		Assert.assertTrue(Context.isAuthenticated());
@@ -129,13 +101,9 @@ public class SessionControllerLoggingTest extends BaseModuleWebContextSensitiveT
 		boolean sessionIdInLogs = logs.stream()
 			.anyMatch(e -> e.getFormattedMessage().contains(SESSION_ID));
 
-		Assert.assertFalse("Het sessie-ID mag niet in de logs verschijnen", sessionIdInLogs);
+		Assert.assertFalse("The session ID must never appear in the logs", sessionIdInLogs);
 	}
 
-	/**
-	 * Verifieert dat de gebruikersnaam wel gelogd wordt maar geen andere
-	 * persoonlijk identificeerbare informatie (PII) zoals UUID's van de gebruiker.
-	 */
 	@Test
 	public void delete_shouldLogUsernameButNotUserUuid() {
 		Assert.assertTrue(Context.isAuthenticated());
@@ -146,14 +114,12 @@ public class SessionControllerLoggingTest extends BaseModuleWebContextSensitiveT
 
 		List<ILoggingEvent> logs = logAppender.list;
 
-		// Gebruikersnaam mag wel gelogd worden
 		boolean usernameLogged = logs.stream()
 			.anyMatch(e -> e.getFormattedMessage().contains(username));
-		Assert.assertTrue("De gebruikersnaam moet gelogd worden bij uitloggen", usernameLogged);
+		Assert.assertTrue("The username must be logged on logout", usernameLogged);
 
-		// UUID mag niet gelogd worden
 		boolean uuidInLogs = logs.stream()
 			.anyMatch(e -> e.getFormattedMessage().contains(userUuid));
-		Assert.assertFalse("De UUID van de gebruiker mag niet in de logs verschijnen", uuidInLogs);
+		Assert.assertFalse("The user UUID must not appear in the logs", uuidInLogs);
 	}
 }
