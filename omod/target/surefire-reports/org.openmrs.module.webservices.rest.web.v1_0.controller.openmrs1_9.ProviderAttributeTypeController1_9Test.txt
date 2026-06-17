@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_9.ProviderAttributeTypeController1_9Test
+-------------------------------------------------------------------------------
+Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.975 s -- in org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_9.ProviderAttributeTypeController1_9Test

@@ -43,6 +43,10 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
+/**
+ * Controller that lets a client check the status of their session, and log out.
+ * (Authenticating is handled through a filter, and may happen through this or any other resource).
+ */
 @Controller
 @RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/session")
 public class SessionController1_9 extends BaseRestController {
@@ -54,6 +58,10 @@ public class SessionController1_9 extends BaseRestController {
 	@Autowired
 	RestService restService;
 
+	/**
+	 * Tells the user whether they are authenticated and provides details on the
+	 * logged-in user
+	 */
 	@RequestMapping(method = RequestMethod.GET)
 	@ResponseBody
 	public Object get() {
@@ -65,15 +73,16 @@ public class SessionController1_9 extends BaseRestController {
 			Context.addProxyPrivilege(PrivilegeConstants.GET_GLOBAL_PROPERTIES);
 
 			session.add("allowedLocales", Context.getAdministrationService().getAllowedLocales());
-		}
-		finally {
+		} finally {
 			Context.removeProxyPrivilege(PrivilegeConstants.GET_GLOBAL_PROPERTIES);
 		}
 		if (authenticated) {
 			session.add("user", ConversionUtil.convertToRepresentation(Context.getAuthenticatedUser(),
 					new CustomRepresentation(USER_CUSTOM_REP)));
-			session.add("sessionLocation", ConversionUtil.convertToRepresentation(Context.getUserContext().getLocation(), Representation.REF));
-			session.add("currentProvider", ConversionUtil.convertToRepresentation(getCurrentProvider(), Representation.REF));
+			session.add("sessionLocation",
+					ConversionUtil.convertToRepresentation(Context.getUserContext().getLocation(), Representation.REF));
+			session.add("currentProvider",
+					ConversionUtil.convertToRepresentation(getCurrentProvider(), Representation.REF));
 		}
 		return session;
 	}
@@ -87,8 +96,7 @@ public class SessionController1_9 extends BaseRestController {
 			Locale locale = null;
 			try {
 				locale = LocaleUtils.toLocale(localeStr);
-			}
-			catch (IllegalArgumentException e) {
+			} catch (IllegalArgumentException e) {
 				throw new APIException(" '" + localeStr + "' does not represent a valid locale.");
 			}
 			Set<Locale> allowedLocales = new HashSet<Locale>(Context.getAdministrationService().getAllowedLocales());
@@ -116,11 +124,15 @@ public class SessionController1_9 extends BaseRestController {
 	@ResponseBody
 	@ResponseStatus(value = HttpStatus.NO_CONTENT)
 	public void delete(HttpServletRequest request) {
+		String username = Context.isAuthenticated() && Context.getAuthenticatedUser() != null
+				? Context.getAuthenticatedUser().getUsername()
+				: "unauthenticated";
 		Context.logout();
 		HttpSession session = request.getSession(false);
 		if (session != null && request.isRequestedSessionIdValid()) {
 			session.invalidate();
 		}
+		log.info("[SECURITY] User '{}' logged out successfully", username);
 	}
 
 	protected Provider getCurrentProvider() {
@@ -133,8 +145,7 @@ public class SessionController1_9 extends BaseRestController {
 				if (currentUser.getPerson() != null) {
 					providers = Context.getProviderService().getProvidersByPerson(currentUser.getPerson(), false);
 				}
-			}
-			finally {
+			} finally {
 				Context.removeProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
 			}
 			if (providers.size() > 1) {
@@ -146,10 +157,21 @@ public class SessionController1_9 extends BaseRestController {
 		return currentProvider;
 	}
 
+	/**
+	 * Diagnostics endpoint for integration testing and support. Returns session and
+	 * user information to help diagnose authentication issues.
+	 * * SECURITY FIX: Programmatische privilege-check toegevoegd conform NEN-7510 A.9.1 / A.9.4.
+	 * De @Authorized annotatie wordt door OpenMRS niet standaard onderschept op Spring Controllers.
+	 */
 	@RequestMapping(value = "/diag", method = RequestMethod.GET)
+	@Authorized(PrivilegeConstants.VIEW_ADMIN_FUNCTIONS)
 	@ResponseBody
-	@Authorized({PrivilegeConstants.VIEW_ADMIN_FUNCTIONS})
-	public Object getDiagnostics(@org.springframework.web.bind.annotation.RequestParam(value = "token", required = false) String token) {
+	public Object getDiagnostics(
+			@org.springframework.web.bind.annotation.RequestParam(value = "token", required = false) String token) {
+		
+		// Dwing autorisatie af op controller-niveau om gevoelige data-lekkage (Information Disclosure) te stoppen
+		Context.requirePrivilege(PrivilegeConstants.VIEW_ADMIN_FUNCTIONS);
+
 		SimpleObject diag = new SimpleObject();
 		diag.add("authenticated", Context.isAuthenticated());
 		diag.add("serverTime", System.currentTimeMillis());

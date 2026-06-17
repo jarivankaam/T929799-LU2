@@ -30,17 +30,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Filter intended for all /ws/rest calls that allows the user to authenticate via Basic
- * authentication. (It will not fail on invalid or missing credentials. We count on the API to throw
- * exceptions if an unauthenticated user tries to do something they are not allowed to do.) <br/>
+ * Filter intended for all /ws/rest calls that allows the user to authenticate
+ * via Basic
+ * authentication. (It will not fail on invalid or missing credentials. We count
+ * on the API to throw
+ * exceptions if an unauthenticated user tries to do something they are not
+ * allowed to do.) <br/>
  * <br/>
  * IP address authorization is also performed based on the global property:
  * {@link RestConstants#ALLOWED_IPS_GLOBAL_PROPERTY_NAME}
  */
 public class AuthorizationFilter implements Filter {
-	
+
 	private static final Logger log = LoggerFactory.getLogger(AuthorizationFilter.class);
-	
+
 	/**
 	 * @see javax.servlet.Filter#init(javax.servlet.FilterConfig)
 	 */
@@ -48,7 +51,7 @@ public class AuthorizationFilter implements Filter {
 	public void init(FilterConfig arg0) throws ServletException {
 		log.debug("Initializing REST WS Authorization filter");
 	}
-	
+
 	/**
 	 * @see javax.servlet.Filter#destroy()
 	 */
@@ -56,67 +59,76 @@ public class AuthorizationFilter implements Filter {
 	public void destroy() {
 		log.debug("Destroying REST WS Authorization filter");
 	}
-	
+
 	/**
-	 * @see javax.servlet.Filter#doFilter(javax.servlet.ServletRequest, javax.servlet.ServletResponse,
+	 * @see javax.servlet.Filter#doFilter(javax.servlet.ServletRequest,
+	 *      javax.servlet.ServletResponse,
 	 *      javax.servlet.FilterChain)
 	 */
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-	        throws IOException, ServletException {
-		
-		// check the IP address first.  If its not valid, return a 403
+			throws IOException, ServletException {
+
+		// check the IP address first. If its not valid, return a 403
 		if (!RestUtil.isIpAllowed(request.getRemoteAddr())) {
 			// the ip address is not valid, set a 403 http error code
 			HttpServletResponse httpresponse = (HttpServletResponse) response;
+			log.warn("[SECURITY] REST API access denied: IP address '{}' is not on the allowed list",
+					request.getRemoteAddr());
 			httpresponse.sendError(HttpServletResponse.SC_FORBIDDEN,
-			    "IP address '" + request.getRemoteAddr() + "' is not authorized");
+					"IP address '" + request.getRemoteAddr() + "' is not authorized");
 			return;
 		}
-		
-		// skip if the session has timed out, we're already authenticated, or it's not an HTTP request
+
+		// skip if the session has timed out, we're already authenticated, or it's not
+		// an HTTP request
 		if (request instanceof HttpServletRequest) {
 			HttpServletRequest httpRequest = (HttpServletRequest) request;
 			if (httpRequest.getRequestedSessionId() != null && !httpRequest.isRequestedSessionIdValid()) {
 				HttpServletResponse httpResponse = (HttpServletResponse) response;
+				log.warn("[SECURITY] Session timed out for request from IP '{}'", request.getRemoteAddr());
 				httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Session timed out");
 			}
-			
+
 			if (!Context.isAuthenticated()) {
+				String attemptedUsername = "";
 				String basicAuth = httpRequest.getHeader("Authorization");
 				if (basicAuth != null) {
-					// check that header is in format "Basic ${base64encode(username + ":" + password)}"
+					// check that header is in format "Basic ${base64encode(username + ":" +
+					// password)}"
 					if (basicAuth.startsWith("Basic")) {
 						try {
 							// remove the leading "Basic "
 							basicAuth = basicAuth.substring(6);
 							if (StringUtils.isBlank(basicAuth)) {
 								HttpServletResponse httpResponse = (HttpServletResponse) response;
-								httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid credentials provided");
+								httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST,
+										"Invalid credentials provided");
 								return;
 							}
-							
+
 							String decoded = new String(Base64.decodeBase64(basicAuth), Charset.forName("UTF-8"));
 							if (StringUtils.isBlank(decoded) || !decoded.contains(":")) {
 								HttpServletResponse httpResponse = (HttpServletResponse) response;
-								httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid credentials provided");
+								httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST,
+										"Invalid credentials provided");
 								return;
 							}
-							
+
 							String[] userAndPass = decoded.split(":");
+							attemptedUsername = userAndPass[0];
 							Context.authenticate(userAndPass[0], userAndPass[1]);
-							log.debug("authenticated [{}]", userAndPass[0]);
-						}
-						catch (Exception ex) {
+							log.info("[SECURITY] Successful login for user '{}'", userAndPass[0]);
+						} catch (Exception ex) {
 							// This filter never stops execution. If the user failed to
 							// authenticate, that will be caught later.
-							log.debug("authentication exception ", ex);
+							log.warn("[SECURITY] Failed login attempt for user '{}'", attemptedUsername);
 						}
 					}
 				}
 			}
 		}
-		
+
 		// continue with the filter chain (unless IP is not allowed)
 		chain.doFilter(request, response);
 	}
