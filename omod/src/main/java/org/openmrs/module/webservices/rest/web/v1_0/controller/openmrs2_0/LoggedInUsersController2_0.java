@@ -10,19 +10,21 @@
 package org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs2_0;
 
 import org.openmrs.annotation.Authorized;
-import org.openmrs.api.context.Context;
+import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
 import org.openmrs.util.PrivilegeConstants;
 import org.openmrs.web.WebConstants;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,6 +43,7 @@ public class LoggedInUsersController2_0 extends BaseRestController {
 	public Object getLoggedInUsers(HttpSession httpSession) {
 
 		ServletContext servletContext = httpSession.getServletContext();
+		@SuppressWarnings("unchecked")
 		Map<String, String> currentUsers = (Map<String, String>) servletContext.getAttribute(WebConstants.CURRENT_USERS);
 		if (currentUsers == null) {
 			currentUsers = new HashMap<>();
@@ -49,5 +52,13 @@ public class LoggedInUsersController2_0 extends BaseRestController {
 		List<String> userNames = new ArrayList<>(currentUsers.values());
 		Collections.sort(userNames);
 		return userNames;
+	}
+
+	@ExceptionHandler(Exception.class)
+	@ResponseBody
+	public SimpleObject handleException(Exception exception, HttpServletResponse response) {
+		int status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		response.setStatus(status);
+		return buildCleanErrorResponse(status, "Internal Server Error", exception.getMessage());
 	}
 }

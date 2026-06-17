@@ -9,39 +9,43 @@
  */
 package org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs2_2;
 
-import java.util.Map;
-
 import org.openmrs.User;
 import org.openmrs.api.InvalidActivationKeyException;
 import org.openmrs.api.UserService;
 import org.openmrs.api.ValidationException;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
+import org.openmrs.module.webservices.rest.web.v1_0.dto.PasswordResetRequestDto;
 import org.openmrs.notification.MessageException;
 import org.openmrs.util.PrivilegeConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
+
+import javax.servlet.http.HttpServletResponse;
 
 @Controller
 @RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/passwordreset")
 public class PasswordResetController2_2 extends BaseRestController {
-	
+
 	@Qualifier("userService")
 	@Autowired
 	private UserService userService;
-	
+
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseStatus(HttpStatus.OK)
-	public void requestPasswordReset(@RequestBody Map<String, String> body) throws MessageException {
-		String usernameOrEmail = body.get("usernameOrEmail");
+	public void requestPasswordReset(@RequestBody PasswordResetRequestDto body) throws MessageException {
+		String usernameOrEmail = (body != null) ? body.getUsernameOrEmail() : null;
 		try {
 			Context.addProxyPrivilege(PrivilegeConstants.GET_USERS);
 			Context.addProxyPrivilege(PrivilegeConstants.GET_GLOBAL_PROPERTIES);
@@ -59,19 +63,41 @@ public class PasswordResetController2_2 extends BaseRestController {
 			Context.removeProxyPrivilege(PrivilegeConstants.EDIT_USER_PASSWORDS);
 		}
 	}
-	
+
 	@RequestMapping(value = "/{activationkey}", method = RequestMethod.POST)
 	@ResponseStatus(HttpStatus.OK)
 	public void resetPassword(@PathVariable("activationkey") String activationkey,
-	        @RequestBody Map<String, String> body) {
-		String newPassword = body.get("newPassword");
+							  @RequestBody PasswordResetRequestDto body) {
+		String newPassword = (body != null) ? body.getNewPassword() : null;
 		try {
 			userService.changePasswordUsingActivationKey(activationkey, newPassword);
 		}
 		catch (InvalidActivationKeyException ex) {
 			throw new ValidationException(ex.getMessage());
 		}
-		
 	}
-	
+
+	@ExceptionHandler(ValidationException.class)
+	@ResponseBody
+	public SimpleObject handleValidationException(ValidationException exception, HttpServletResponse response) {
+		int status = HttpServletResponse.SC_BAD_REQUEST;
+		response.setStatus(status);
+		return buildCleanErrorResponse(status, "Bad Request", exception.getMessage());
+	}
+
+	@ExceptionHandler(MessageException.class)
+	@ResponseBody
+	public SimpleObject handleMessageException(MessageException exception, HttpServletResponse response) {
+		int status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		response.setStatus(status);
+		return buildCleanErrorResponse(status, "Internal Server Error", exception.getMessage());
+	}
+
+	@ExceptionHandler(Exception.class)
+	@ResponseBody
+	public SimpleObject handleException(Exception exception, HttpServletResponse response) {
+		int status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		response.setStatus(status);
+		return buildCleanErrorResponse(status, "Internal Server Error", exception.getMessage());
+	}
 }

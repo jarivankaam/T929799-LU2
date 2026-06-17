@@ -1,3 +1,12 @@
+/**
+ * This Source Code Form is subject to the terms of the Mozilla Public License,
+ * v. 2.0. If a copy of the MPL was not distributed with this file, You can
+ * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
+ * the terms of the Healthcare Disclaimer located at http://openmrs.org/license.
+ *
+ * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
+ * graphic logo is a trademark of OpenMRS Inc.
+ */
 package org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_8;
 
 import javax.servlet.http.HttpServletRequest;
@@ -9,7 +18,6 @@ import org.openmrs.api.APIException;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.module.webservices.rest.web.RestConstants;
-import org.openmrs.module.webservices.rest.web.RestUtil;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
 import org.openmrs.api.ValidationException;
 import org.openmrs.util.PrivilegeConstants;
@@ -59,9 +67,9 @@ public class ChangePasswordController1_8 extends BaseRestController {
 	@RequestMapping(value = "/{userUuid}", method = RequestMethod.POST)
 	@ResponseStatus(HttpStatus.OK)
 	@Authorized({PrivilegeConstants.EDIT_USER_PASSWORDS})
+	@ExceptionHandler(NullPointerException.class)
 	public void changeOthersPassword(@PathVariable("userUuid") String userUuid, @RequestBody ChangeOtherPasswordRequest request) {
 
-		// Extra check: voorkom NullPointerException als het request leeg is
 		if (request == null || request.getNewPassword() == null) {
 			throw new ValidationException("newPassword is required.");
 		}
@@ -78,7 +86,7 @@ public class ChangePasswordController1_8 extends BaseRestController {
 		}
 
 		if (user == null || user.getUserId() == null) {
-			throw new NullPointerException(); // Dit triggert netjes de handleNotFound hieronder
+			throw new NullPointerException();
 		} else {
 			Context.getUserService().changePassword(user, newPassword);
 		}
@@ -88,7 +96,10 @@ public class ChangePasswordController1_8 extends BaseRestController {
 	@ResponseBody
 	public SimpleObject handleNotFound(NullPointerException exception, HttpServletRequest request,
 									   HttpServletResponse response) {
-		response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-		return RestUtil.wrapErrorResponse(exception, "User not found");
+		int status = HttpServletResponse.SC_NOT_FOUND;
+		response.setStatus(status);
+
+		// Maakt nu gebruik van de schone methode uit de BaseRestController
+		return buildCleanErrorResponse(status, "Not Found", "User not found");
 	}
 }

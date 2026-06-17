@@ -20,12 +20,14 @@ import org.openmrs.api.EncounterService;
 import org.openmrs.api.VisitService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.handler.EncounterVisitHandler;
+import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.module.webservices.rest.web.ConversionUtil;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.representation.Representation;
 import org.openmrs.module.webservices.rest.web.response.IllegalPropertyException;
 import org.openmrs.module.webservices.rest.web.response.IllegalRequestException;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
+import org.openmrs.module.webservices.rest.web.v1_0.dto.VisitConfigurationRequestDto;
 import org.openmrs.module.webservices.rest.web.v1_0.wrapper.VisitConfiguration;
 import org.openmrs.scheduler.SchedulerException;
 import org.openmrs.scheduler.SchedulerService;
@@ -34,12 +36,14 @@ import org.openmrs.util.OpenmrsConstants;
 import org.openmrs.util.PrivilegeConstants;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -72,16 +76,17 @@ public class VisitConfigurationController2_0 extends BaseRestController {
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseStatus(HttpStatus.OK)
 	@Authorized({PrivilegeConstants.CONFIGURE_VISITS})
-	public void updateCurrentConfiguration(@RequestBody VisitConfiguration newConfiguration) throws SchedulerException {
+	public void updateCurrentConfiguration(@RequestBody VisitConfigurationRequestDto body) throws SchedulerException {
 		Context.requirePrivilege(PrivilegeConstants.CONFIGURE_VISITS);
 		AdministrationService administrationService = Context.getAdministrationService();
 		EncounterService encounterService = Context.getEncounterService();
 		VisitService visitService = Context.getVisitService();
 		SchedulerService schedulerService = Context.getSchedulerService();
 
-		boolean isEnabled = (newConfiguration.getEnableVisits() != null) ? newConfiguration.getEnableVisits() : false;
+		boolean isEnabled = (body != null && body.getEnableVisits() != null) ? body.getEnableVisits() : false;
+		String handler = (body != null) ? body.getEncounterVisitsAssignmentHandler() : null;
 
-		if (isEnabled && StringUtils.isEmpty(newConfiguration.getEncounterVisitsAssignmentHandler())) {
+		if (isEnabled && StringUtils.isEmpty(handler)) {
 			throw new IllegalRequestException("Encounter Visit assignment handler cannot be empty");
 		}
 
@@ -89,20 +94,29 @@ public class VisitConfigurationController2_0 extends BaseRestController {
 				.setGlobalProperty(OpenmrsConstants.GLOBAL_PROPERTY_ENABLE_VISITS, Boolean.toString(isEnabled));
 
 		if (isEnabled) {
-			String newEncounterVisitsAssignmentHandler = newConfiguration.getEncounterVisitsAssignmentHandler();
-			if (isEncounterVisitsAssignmentHandlerValid(newEncounterVisitsAssignmentHandler, encounterService)) {
+			if (isEncounterVisitsAssignmentHandlerValid(handler, encounterService)) {
 				administrationService
-						.setGlobalProperty(OpenmrsConstants.GP_VISIT_ASSIGNMENT_HANDLER, newEncounterVisitsAssignmentHandler);
+						.setGlobalProperty(OpenmrsConstants.GP_VISIT_ASSIGNMENT_HANDLER, handler);
 			} else {
 				throw new IllegalPropertyException(
-						"Provided encounterVisitsAssignmentHandler class " + newEncounterVisitsAssignmentHandler + " does not exist.");
+						"Provided encounterVisitsAssignmentHandler class " + handler + " does not exist.");
 			}
 		}
 
-		Boolean autoCloseStarted = (newConfiguration.getStartAutoCloseVisitsTask() != null) ? newConfiguration.getStartAutoCloseVisitsTask() : false;
+		Boolean autoCloseStarted = (body != null && body.getStartAutoCloseVisitsTask() != null) ? body.getStartAutoCloseVisitsTask() : false;
 		updateGetAutoCloseVisitsTaskStartedValue(schedulerService, autoCloseStarted);
 
-		updateVisitTypesToAutoCloseValue(administrationService, visitService, newConfiguration.getVisitTypesToAutoClose());
+		List<VisitType> visitTypesToAutoClose = new ArrayList<>();
+		if (body != null && body.getVisitTypesToAutoClose() != null) {
+			for (VisitConfigurationRequestDto.VisitTypeDto visitTypeDto : body.getVisitTypesToAutoClose()) {
+				if (visitTypeDto != null && visitTypeDto.getUuid() != null) {
+					VisitType vt = new VisitType();
+					vt.setUuid(visitTypeDto.getUuid());
+					visitTypesToAutoClose.add(vt);
+				}
+			}
+		}
+		updateVisitTypesToAutoCloseValue(administrationService, visitService, visitTypesToAutoClose);
 	}
 
 	private Boolean getEnableVisitsValue(AdministrationService administrationService) {
@@ -123,7 +137,7 @@ public class VisitConfigurationController2_0 extends BaseRestController {
 	}
 
 	private void updateGetAutoCloseVisitsTaskStartedValue(SchedulerService schedulerService,
-			Boolean autoCloseVisitsTaskStarted) throws SchedulerException {
+														  Boolean autoCloseVisitsTaskStarted) throws SchedulerException {
 		TaskDefinition closeVisitsTask = schedulerService.getTaskByName(OpenmrsConstants.AUTO_CLOSE_VISITS_TASK_NAME);
 		if (closeVisitsTask != null) {
 			if (autoCloseVisitsTaskStarted && !closeVisitsTask.getStarted()) {
@@ -135,7 +149,7 @@ public class VisitConfigurationController2_0 extends BaseRestController {
 	}
 
 	private List<VisitType> getVisitTypesToAutoCloseValue(AdministrationService administrationService,
-			VisitService visitService) {
+														  VisitService visitService) {
 		String gpValue = administrationService.getGlobalProperty(OpenmrsConstants.GP_VISIT_TYPES_TO_AUTO_CLOSE);
 		if (StringUtils.isNotBlank(gpValue)) {
 			List<VisitType> visitTypes = new ArrayList<>();
@@ -157,8 +171,7 @@ public class VisitConfigurationController2_0 extends BaseRestController {
 	}
 
 	private void updateVisitTypesToAutoCloseValue(AdministrationService administrationService, VisitService visitService,
-			List<VisitType> visitTypesToAutoClose) {
-		// visitTypesToAutoClose contains only uuids, map to full visit types
+												  List<VisitType> visitTypesToAutoClose) {
 		List<String> visitTypesToAutoCloseUuids = visitTypesToAutoClose.stream().map(BaseOpenmrsObject::getUuid)
 				.collect(Collectors.toList());
 		List<VisitType> visitTypesToAutoCloseFull = getVisitTypesByUuids(visitTypesToAutoCloseUuids, visitService);
@@ -174,11 +187,30 @@ public class VisitConfigurationController2_0 extends BaseRestController {
 	}
 
 	private boolean isEncounterVisitsAssignmentHandlerValid(String encounterVisitsAssignmentHandler, EncounterService encounterService) {
+		if (encounterVisitsAssignmentHandler == null) {
+			return false;
+		}
 		for (EncounterVisitHandler visitHandler : encounterService.getEncounterVisitHandlers()) {
 			if (visitHandler.getClass().getName().equals(encounterVisitsAssignmentHandler)) {
 				return true;
 			}
 		}
 		return false;
+	}
+
+	@ExceptionHandler({IllegalRequestException.class, IllegalPropertyException.class})
+	@ResponseBody
+	public SimpleObject handleBadRequestExceptions(Exception exception, HttpServletResponse response) {
+		int status = HttpServletResponse.SC_BAD_REQUEST;
+		response.setStatus(status);
+		return buildCleanErrorResponse(status, "Bad Request", exception.getMessage());
+	}
+
+	@ExceptionHandler(Exception.class)
+	@ResponseBody
+	public SimpleObject handleException(Exception exception, HttpServletResponse response) {
+		int status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		response.setStatus(status);
+		return buildCleanErrorResponse(status, "Internal Server Error", exception.getMessage());
 	}
 }

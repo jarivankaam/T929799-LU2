@@ -23,12 +23,14 @@ import org.openmrs.module.webservices.rest.web.api.RestService;
 import org.openmrs.module.webservices.rest.web.representation.CustomRepresentation;
 import org.openmrs.module.webservices.rest.web.representation.Representation;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
+import org.openmrs.module.webservices.rest.web.v1_0.dto.SessionRequestDto;
 import org.openmrs.util.PrivilegeConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -36,17 +38,13 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 
-/**
- * Controller that lets a client check the status of their session, and log out. (Authenticating is
- * handled through a filter, and may happen through this or any other resource.
- */
 @Controller
 @RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/session")
 public class SessionController1_9 extends BaseRestController {
@@ -58,9 +56,6 @@ public class SessionController1_9 extends BaseRestController {
 	@Autowired
 	RestService restService;
 
-	/**
-	 * Tells the user whether they are authenticated and provides details on the logged-in user
-	 */
 	@RequestMapping(method = RequestMethod.GET)
 	@ResponseBody
 	public Object get() {
@@ -70,7 +65,7 @@ public class SessionController1_9 extends BaseRestController {
 		session.add("locale", Context.getLocale());
 		try {
 			Context.addProxyPrivilege(PrivilegeConstants.GET_GLOBAL_PROPERTIES);
-			
+
 			session.add("allowedLocales", Context.getAdministrationService().getAllowedLocales());
 		}
 		finally {
@@ -78,7 +73,7 @@ public class SessionController1_9 extends BaseRestController {
 		}
 		if (authenticated) {
 			session.add("user", ConversionUtil.convertToRepresentation(Context.getAuthenticatedUser(),
-			    new CustomRepresentation(USER_CUSTOM_REP)));
+					new CustomRepresentation(USER_CUSTOM_REP)));
 			session.add("sessionLocation", ConversionUtil.convertToRepresentation(Context.getUserContext().getLocation(), Representation.REF));
 			session.add("currentProvider", ConversionUtil.convertToRepresentation(getCurrentProvider(), Representation.REF));
 		}
@@ -88,8 +83,8 @@ public class SessionController1_9 extends BaseRestController {
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
 	@ResponseStatus(value = HttpStatus.OK)
-	public Object post(HttpServletRequest request, @RequestBody Map<String, String> body) {
-		String localeStr = body.get("locale");
+	public Object post(HttpServletRequest request, @RequestBody SessionRequestDto body) {
+		String localeStr = body.getLocale();
 		if (localeStr != null) {
 			Locale locale = null;
 			try {
@@ -105,25 +100,20 @@ public class SessionController1_9 extends BaseRestController {
 				throw new APIException(" '" + localeStr + "' is not in the list of allowed locales.");
 			}
 		}
-		String locationUuid = body.get("sessionLocation");
+		String locationUuid = body.getSessionLocation();
 		if (locationUuid != null) {
 			Location location = Context.getLocationService().getLocationByUuid(locationUuid);
 			if (location == null) {
 				throw new APIException(" '" + locationUuid + "' is not the UUID of any location.");
 			}
 			Context.getUserContext().setLocation(location);
-			{ // for compatability with AppUi session location
+			{
 				request.getSession().setAttribute("emrContext.sessionLocationId", location.getId());
 			}
 		}
 		return get();
 	}
 
-	/**
-	 * Logs the client out
-	 *
-	 * <strong>Should</strong> log the client out
-	 */
 	@RequestMapping(method = RequestMethod.DELETE)
 	@ResponseBody
 	@ResponseStatus(value = HttpStatus.NO_CONTENT)
@@ -135,11 +125,6 @@ public class SessionController1_9 extends BaseRestController {
 		}
 	}
 
-	/**
-	 * Get current provider
-	 *
-	 * @return Provider if the user is authenticated
-	 */
 	protected Provider getCurrentProvider() {
 		Provider currentProvider = null;
 		User currentUser = Context.getAuthenticatedUser();
@@ -163,11 +148,6 @@ public class SessionController1_9 extends BaseRestController {
 		return currentProvider;
 	}
 
-	/**
-	 * Diagnostics endpoint for integration testing and support. Returns session and user information
-	 * to help diagnose authentication issues.
-	 * NOTE: No authorization check — accessible to any caller (authenticated or not).
-	 */
 	@RequestMapping(value = "/diag", method = RequestMethod.GET)
 	@ResponseBody
 	@Authorized({PrivilegeConstants.VIEW_ADMIN_FUNCTIONS})
@@ -181,5 +161,13 @@ public class SessionController1_9 extends BaseRestController {
 			diag.add("userPrivileges", Context.getAuthenticatedUser().getPrivileges());
 		}
 		return diag;
+	}
+
+	@ExceptionHandler(APIException.class)
+	@ResponseBody
+	public SimpleObject handleAPIException(APIException exception, HttpServletResponse response) {
+		int status = HttpServletResponse.SC_BAD_REQUEST;
+		response.setStatus(status);
+		return buildCleanErrorResponse(status, "Bad Request", exception.getMessage());
 	}
 }
