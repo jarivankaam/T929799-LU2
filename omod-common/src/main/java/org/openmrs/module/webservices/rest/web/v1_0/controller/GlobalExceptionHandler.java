@@ -23,16 +23,11 @@ public class GlobalExceptionHandler {
 
     private final Log log = LogFactory.getLog(getClass());
 
-    /**
-     * Vangt specifieke runtime- en argumentfouten af (zoals lege wachtwoorden)
-     * om te voorkomen dat de default serializer de Java stacktrace lekt.
-     */
     @ExceptionHandler({IllegalArgumentException.class, RuntimeException.class})
     @ResponseBody
     public SimpleObject handleRuntimeException(Exception ex, HttpServletResponse response) {
         log.warn("Runtime/Validation exception intercepted: " + ex.getMessage());
 
-        // We zetten de status op 400 Bad Request omdat het een invoerfout betreft
         response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 
         SimpleObject cleanErrorResponse = new SimpleObject();
@@ -40,8 +35,17 @@ public class GlobalExceptionHandler {
 
         errorDetails.put("message", "Bad Request");
         errorDetails.put("code", "400");
-        // Toon wel de functionele boodschap aan de gebruiker, maar VERNIETIG de stacktrace!
-        errorDetails.put("detail", StringUtils.isNotEmpty(ex.getMessage()) ? ex.getMessage() : "Invalid request parameters.");
+
+        // VEILIGHEIDSMITIGATIE: Filter de exacte exception boodschap.
+        String detailMessage = "Invalid request parameters.";
+        if (StringUtils.isNotEmpty(ex.getMessage()) && !ex.getMessage().contains("org.openmrs")) {
+            // Alleen veilige, niet-systeem-specifieke meldingen doorlaten
+            detailMessage = ex.getMessage();
+        } else if (ex.getMessage() != null && ex.getMessage().contains("cannot be null or blank")) {
+            detailMessage = "One or more required fields are empty or invalid.";
+        }
+
+        errorDetails.put("detail", detailMessage);
 
         cleanErrorResponse.put("error", errorDetails);
         return cleanErrorResponse;

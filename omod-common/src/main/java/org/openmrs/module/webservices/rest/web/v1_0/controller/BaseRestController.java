@@ -43,10 +43,6 @@ public class BaseRestController {
 
 	private final Log log = LogFactory.getLog(getClass());
 
-	/**
-	 * Centrale helper-methode om een uniforme, schone JSON-foutmelding
-	 * op te bouwen zonder de Java stacktrace te lekken naar de client.
-	 */
 	protected SimpleObject buildCleanErrorResponse(int errorCode, String message, String errorDetail) {
 		SimpleObject cleanErrorResponse = new SimpleObject();
 		SimpleObject errorDetails = new SimpleObject();
@@ -93,7 +89,13 @@ public class BaseRestController {
 												   HttpServletResponse response) {
 		int status = HttpServletResponse.SC_BAD_REQUEST;
 		response.setStatus(status);
-		return buildCleanErrorResponse(status, "Bad Request", validationException.getMessage());
+
+		String userMessage = validationException.getMessage();
+		if (userMessage != null && userMessage.contains("cannot be null or blank")) {
+			userMessage = "One or more required fields are empty or invalid.";
+		}
+
+		return buildCleanErrorResponse(status, "Bad Request", userMessage);
 	}
 
 	@ExceptionHandler(ConversionException.class)
@@ -118,8 +120,9 @@ public class BaseRestController {
 	@ResponseBody
 	public SimpleObject handleException(Exception ex, HttpServletRequest request, HttpServletResponse response)
 			throws Exception {
-		int errorCode = DEFAULT_ERROR_CODE;
+		int errorCode = DEFAULT_ERROR_CODE; // Default 500
 		String errorDetail = DEFAULT_ERROR_DETAIL;
+
 		ResponseStatus ann = ex.getClass().getAnnotation(ResponseStatus.class);
 
 		if (ann != null) {
@@ -127,13 +130,21 @@ public class BaseRestController {
 			if (StringUtils.isNotEmpty(ann.reason())) {
 				errorDetail = ann.reason();
 			}
-		} else if (RestUtil.hasCause(ex, APIAuthenticationException.class)) {
+		}
+		else if (RestUtil.hasCause(ex, APIAuthenticationException.class)) {
 			return apiAuthenticationExceptionHandler(ex, request, response);
-		} else if (ex.getClass() == HttpRequestMethodNotSupportedException.class) {
+		}
+		// Voorkom 500 server crash bij missende parameters: vertaal deze APIException naar een nette 400 Bad Request
+		else if (ex instanceof org.openmrs.api.APIException && ex.getMessage() != null && ex.getMessage().contains("cannot be null or blank")) {
+			errorCode = HttpServletResponse.SC_BAD_REQUEST;
+			errorDetail = "One or more required fields are empty or invalid.";
+		}
+		else if (ex.getClass() == HttpRequestMethodNotSupportedException.class) {
 			errorCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
 			errorDetail = "HTTP method not supported";
 		}
 
+		// LOGGING: Exact conform de verwachtingen van de unit-testen (BaseRestControllerTest)
 		if (errorCode >= 500) {
 			log.error(ex.getMessage(), ex);
 		} else {
@@ -141,7 +152,12 @@ public class BaseRestController {
 		}
 
 		response.setStatus(errorCode);
+
+		// VEILIGHEIDSMITIGATIE API OUTPUT: Dwing bij alle 500 serverfouten ALTIJD een generieke melding af richting de client
 		String message = (errorCode >= 500) ? "Internal Server Error" : "Error";
+		if (errorCode >= 500) {
+			errorDetail = "An unexpected error occurred. Please contact your system administrator.";
+		}
 
 		return buildCleanErrorResponse(errorCode, message, errorDetail);
 	}

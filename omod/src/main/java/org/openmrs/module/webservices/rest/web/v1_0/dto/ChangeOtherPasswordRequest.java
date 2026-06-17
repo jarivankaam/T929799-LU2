@@ -13,7 +13,6 @@ public class ChangeOtherPasswordRequest {
 	
 	private String newPassword;
 	
-	// Default constructor voor Jackson
 	public ChangeOtherPasswordRequest() {
 	}
 	

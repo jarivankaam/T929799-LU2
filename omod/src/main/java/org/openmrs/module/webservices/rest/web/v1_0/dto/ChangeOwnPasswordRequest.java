@@ -17,7 +17,6 @@ public class ChangeOwnPasswordRequest {
 	
 	private String newPassword;
 	
-	// Default constructor voor Jackson
 	public ChangeOwnPasswordRequest() {
 	}
 	
