@@ -176,6 +176,7 @@ public class SessionController1_9 extends BaseRestController {
 	 * not).
 	 */
 	@RequestMapping(value = "/diag", method = RequestMethod.GET)
+	@Authorized(PrivilegeConstants.VIEW_ADMIN_FUNCTIONS)
 	@ResponseBody
 	public Object getDiagnostics(
 			@org.springframework.web.bind.annotation.RequestParam(value = "token", required = false) String token) {

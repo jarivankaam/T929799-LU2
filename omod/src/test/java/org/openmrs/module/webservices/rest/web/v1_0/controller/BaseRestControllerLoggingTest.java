@@ -13,6 +13,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.openmrs.api.APIAuthenticationException;
+import org.openmrs.api.context.Context;
+import org.openmrs.web.test.BaseModuleWebContextSensitiveTest;
 
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -27,7 +29,7 @@ import javax.servlet.http.HttpServletResponse;
  * via de HTTP-statuscodes en de response-body, aangezien Commons Logging
  * geen ingebouwde test-appender heeft zoals logback.
  */
-public class BaseRestControllerLoggingTest {
+public class BaseRestControllerLoggingTest extends BaseModuleWebContextSensitiveTest {
 
     private BaseRestController controller;
 
@@ -56,17 +58,12 @@ public class BaseRestControllerLoggingTest {
      */
     @Test
     public void apiAuthenticationExceptionHandler_shouldReturn403WhenAuthenticated() throws Exception {
-        // Simuleer een ingelogde gebruiker zonder rechten
-        // Context.isAuthenticated() geeft false terug in unit test zonder Spring
-        // context
-        // We testen de unauthenticated branch (401)
         APIAuthenticationException ex = new APIAuthenticationException("Test exception");
 
         controller.apiAuthenticationExceptionHandler(ex, request, response);
 
-        // Zonder Spring context is de gebruiker niet ingelogd -> 401
-        Assert.assertEquals("Response moet 401 zijn voor niet-ingelogde gebruiker",
-                HttpServletResponse.SC_UNAUTHORIZED, response.getStatus());
+        Assert.assertEquals("Response moet 403 zijn voor ingelogde gebruiker",
+                HttpServletResponse.SC_FORBIDDEN, response.getStatus());
     }
 
     // =========================================================
@@ -79,6 +76,7 @@ public class BaseRestControllerLoggingTest {
      */
     @Test
     public void apiAuthenticationExceptionHandler_shouldReturn401WithCorrectMessage() throws Exception {
+        Context.logout();
         APIAuthenticationException ex = new APIAuthenticationException("User is not logged in");
 
         Object result = controller.apiAuthenticationExceptionHandler(ex, request, response);
@@ -99,6 +97,7 @@ public class BaseRestControllerLoggingTest {
      */
     @Test
     public void apiAuthenticationExceptionHandler_shouldHaveAccessToClientIp() throws Exception {
+        Context.logout();
         APIAuthenticationException ex = new APIAuthenticationException("Unauthorized");
 
         // Verifieer dat het request het IP-adres bevat dat gelogd zou worden
@@ -125,6 +124,7 @@ public class BaseRestControllerLoggingTest {
      */
     @Test
     public void apiAuthenticationExceptionHandler_shouldNotLeakInternalDetailsToClient() throws Exception {
+        Context.logout();
         String geheimeInterneBoodschap = "database_password=SuperGeheim123";
         APIAuthenticationException ex = new APIAuthenticationException(geheimeInterneBoodschap);
 
