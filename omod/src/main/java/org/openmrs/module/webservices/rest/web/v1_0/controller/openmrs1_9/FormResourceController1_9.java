@@ -49,7 +49,7 @@ public class FormResourceController1_9 extends MainResourceController {
 
 		FormResource resource = formService.getFormResourceByUuid(resourceUuid);
 		if (resource == null) {
-			throw new ObjectNotFoundException(); // Nettere 404 in plaats van IllegalArgumentException
+			throw new ObjectNotFoundException();
 		}
 
 		try {

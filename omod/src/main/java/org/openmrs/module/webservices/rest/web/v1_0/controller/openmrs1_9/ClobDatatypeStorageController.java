@@ -15,9 +15,8 @@ import org.apache.commons.logging.LogFactory;
 import org.openmrs.annotation.Authorized;
 import org.openmrs.api.DatatypeService;
 import org.openmrs.api.db.ClobDatatypeStorage;
-import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.module.webservices.rest.web.RestConstants;
-import org.openmrs.module.webservices.rest.web.response.ConversionException; // Toegevoegd voor veilige 400 conversie
+import org.openmrs.module.webservices.rest.web.response.ConversionException;
 import org.openmrs.module.webservices.rest.web.response.ObjectNotFoundException;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
 import org.openmrs.module.webservices.rest.web.v1_0.dto.ClobDataResponseDto;
@@ -35,7 +34,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.io.PrintWriter;
 
 @Controller
@@ -65,7 +63,7 @@ public class ClobDatatypeStorageController extends BaseRestController {
 			clobData = datatypeService.saveClobDatatypeStorage(clobData);
 			return new ClobDataResponseDto(clobData.getUuid());
 		} catch (Exception e) {
-			// Log de exacte fout op de server voor debugging, maar geef een veilige melding aan de client
+
 			log.error("Failed to read or store uploaded CLOB data: " + e.getMessage(), e);
 			throw new ConversionException("Invalid file payload or unsupported content encoding format.");
 		}

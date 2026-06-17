@@ -31,13 +31,11 @@ import org.openmrs.module.webservices.rest.web.v1_0.dto.HL7RequestDto;
 import org.openmrs.util.PrivilegeConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
 
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Message;
@@ -74,7 +72,6 @@ public class HL7MessageController1_8 extends BaseRestController {
 				}
 				hl7 = dto.getHl7();
 			} catch (IOException e) {
-				// Eventuele IOException van de Jackson ObjectMapper direct veilig omzetten naar ConversionException
 				throw new ConversionException("Malformed or unreadable JSON request body.", e);
 			} catch (Exception e) {
 				throw new ConversionException("Invalid JSON format in HL7 request", e);

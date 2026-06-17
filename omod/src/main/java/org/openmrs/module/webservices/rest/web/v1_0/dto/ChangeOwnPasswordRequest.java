@@ -9,8 +9,6 @@
  */
 package org.openmrs.module.webservices.rest.web.v1_0.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 public class ChangeOwnPasswordRequest {
 	
 	private String oldPassword;

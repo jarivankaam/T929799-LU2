@@ -120,7 +120,7 @@ public class BaseRestController {
 	@ResponseBody
 	public SimpleObject handleException(Exception ex, HttpServletRequest request, HttpServletResponse response)
 			throws Exception {
-		int errorCode = DEFAULT_ERROR_CODE; // Default 500
+		int errorCode = DEFAULT_ERROR_CODE;
 		String errorDetail = DEFAULT_ERROR_DETAIL;
 
 		ResponseStatus ann = ex.getClass().getAnnotation(ResponseStatus.class);
@@ -134,7 +134,6 @@ public class BaseRestController {
 		else if (RestUtil.hasCause(ex, APIAuthenticationException.class)) {
 			return apiAuthenticationExceptionHandler(ex, request, response);
 		}
-		// Voorkom 500 server crash bij missende parameters: vertaal deze APIException naar een nette 400 Bad Request
 		else if (ex instanceof org.openmrs.api.APIException && ex.getMessage() != null && ex.getMessage().contains("cannot be null or blank")) {
 			errorCode = HttpServletResponse.SC_BAD_REQUEST;
 			errorDetail = "One or more required fields are empty or invalid.";
@@ -144,7 +143,6 @@ public class BaseRestController {
 			errorDetail = "HTTP method not supported";
 		}
 
-		// LOGGING: Exact conform de verwachtingen van de unit-testen (BaseRestControllerTest)
 		if (errorCode >= 500) {
 			log.error(ex.getMessage(), ex);
 		} else {
@@ -153,7 +151,6 @@ public class BaseRestController {
 
 		response.setStatus(errorCode);
 
-		// VEILIGHEIDSMITIGATIE API OUTPUT: Dwing bij alle 500 serverfouten ALTIJD een generieke melding af richting de client
 		String message = (errorCode >= 500) ? "Internal Server Error" : "Error";
 		if (errorCode >= 500) {
 			errorDetail = "An unexpected error occurred. Please contact your system administrator.";

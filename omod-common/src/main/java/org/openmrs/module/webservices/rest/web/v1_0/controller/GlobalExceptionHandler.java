@@ -36,10 +36,9 @@ public class GlobalExceptionHandler {
         errorDetails.put("message", "Bad Request");
         errorDetails.put("code", "400");
 
-        // VEILIGHEIDSMITIGATIE: Filter de exacte exception boodschap.
+
         String detailMessage = "Invalid request parameters.";
         if (StringUtils.isNotEmpty(ex.getMessage()) && !ex.getMessage().contains("org.openmrs")) {
-            // Alleen veilige, niet-systeem-specifieke meldingen doorlaten
             detailMessage = ex.getMessage();
         } else if (ex.getMessage() != null && ex.getMessage().contains("cannot be null or blank")) {
             detailMessage = "One or more required fields are empty or invalid.";

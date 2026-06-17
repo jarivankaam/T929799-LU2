@@ -17,10 +17,9 @@ import org.apache.commons.logging.LogFactory;
 import org.openmrs.Obs;
 import org.openmrs.annotation.Authorized;
 import org.openmrs.api.ObsService;
-import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.response.IllegalRequestException;
-import org.openmrs.module.webservices.rest.web.response.ObjectNotFoundException; // Toegevoegd voor nette 404
+import org.openmrs.module.webservices.rest.web.response.ObjectNotFoundException;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
 import org.openmrs.obs.ComplexData;
 import org.openmrs.util.PrivilegeConstants;
@@ -30,7 +29,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+
 
 import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletResponse;
@@ -54,7 +53,6 @@ public class ObsComplexValueController1_8 extends BaseRestController {
 
 		Obs obs = obsService.getObsByUuid(uuid);
 		if (obs == null) {
-			// Gecorrigeerd naar ObjectNotFoundException zodat Spring hier automatisch een nette 404 van maakt
 			throw new ObjectNotFoundException();
 		}
 
