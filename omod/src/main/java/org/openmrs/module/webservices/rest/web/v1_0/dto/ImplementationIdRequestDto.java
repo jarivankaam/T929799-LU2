@@ -45,9 +45,9 @@ public class ImplementationIdRequestDto {
 	
 	public String getName() {
 		return name;
-	} // <--- Toevoegen!
+	}
 	
 	public void setName(String name) {
 		this.name = name;
-	} // <--- Toevoegen!
+	}
 }

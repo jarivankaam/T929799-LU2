@@ -20,7 +20,6 @@ import org.openmrs.api.EncounterService;
 import org.openmrs.api.VisitService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.handler.EncounterVisitHandler;
-import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.module.webservices.rest.web.ConversionUtil;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.representation.Representation;
@@ -36,14 +35,12 @@ import org.openmrs.util.OpenmrsConstants;
 import org.openmrs.util.PrivilegeConstants;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -196,21 +193,5 @@ public class VisitConfigurationController2_0 extends BaseRestController {
 			}
 		}
 		return false;
-	}
-
-	@ExceptionHandler({IllegalRequestException.class, IllegalPropertyException.class})
-	@ResponseBody
-	public SimpleObject handleBadRequestExceptions(Exception exception, HttpServletResponse response) {
-		int status = HttpServletResponse.SC_BAD_REQUEST;
-		response.setStatus(status);
-		return buildCleanErrorResponse(status, "Bad Request", exception.getMessage());
-	}
-
-	@ExceptionHandler(Exception.class)
-	@ResponseBody
-	public SimpleObject handleException(Exception exception, HttpServletResponse response) {
-		int status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-		response.setStatus(status);
-		return buildCleanErrorResponse(status, "Internal Server Error", exception.getMessage());
 	}
 }

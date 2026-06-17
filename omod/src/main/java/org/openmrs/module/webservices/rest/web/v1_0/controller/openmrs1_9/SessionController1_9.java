@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -38,7 +37,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.util.Collection;
 import java.util.HashSet;
@@ -161,13 +159,5 @@ public class SessionController1_9 extends BaseRestController {
 			diag.add("userPrivileges", Context.getAuthenticatedUser().getPrivileges());
 		}
 		return diag;
-	}
-
-	@ExceptionHandler(APIException.class)
-	@ResponseBody
-	public SimpleObject handleAPIException(APIException exception, HttpServletResponse response) {
-		int status = HttpServletResponse.SC_BAD_REQUEST;
-		response.setStatus(status);
-		return buildCleanErrorResponse(status, "Bad Request", exception.getMessage());
 	}
 }

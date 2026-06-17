@@ -23,6 +23,30 @@ public class GlobalExceptionHandler {
 
     private final Log log = LogFactory.getLog(getClass());
 
+    /**
+     * Vangt specifieke runtime- en argumentfouten af (zoals lege wachtwoorden)
+     * om te voorkomen dat de default serializer de Java stacktrace lekt.
+     */
+    @ExceptionHandler({IllegalArgumentException.class, RuntimeException.class})
+    @ResponseBody
+    public SimpleObject handleRuntimeException(Exception ex, HttpServletResponse response) {
+        log.warn("Runtime/Validation exception intercepted: " + ex.getMessage());
+
+        // We zetten de status op 400 Bad Request omdat het een invoerfout betreft
+        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+
+        SimpleObject cleanErrorResponse = new SimpleObject();
+        SimpleObject errorDetails = new SimpleObject();
+
+        errorDetails.put("message", "Bad Request");
+        errorDetails.put("code", "400");
+        // Toon wel de functionele boodschap aan de gebruiker, maar VERNIETIG de stacktrace!
+        errorDetails.put("detail", StringUtils.isNotEmpty(ex.getMessage()) ? ex.getMessage() : "Invalid request parameters.");
+
+        cleanErrorResponse.put("error", errorDetails);
+        return cleanErrorResponse;
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseBody
     public SimpleObject handleAllUnhandledExceptions(Exception ex, HttpServletResponse response) {

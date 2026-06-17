@@ -13,6 +13,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.openmrs.Concept;
 import org.openmrs.api.ConceptService;
 import org.openmrs.api.context.Context;
@@ -22,11 +24,11 @@ import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.RestUtil;
 import org.openmrs.module.webservices.rest.web.representation.DefaultRepresentation;
 import org.openmrs.module.webservices.rest.web.representation.Representation;
+import org.openmrs.module.webservices.rest.web.response.ConversionException; // Toegevoegd voor robuuste foutafhandeling
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
 import org.openmrs.module.webservices.rest.web.v1_0.dto.ConceptReferencesRequestDto;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -40,25 +42,32 @@ import java.util.List;
 @RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/conceptreferences")
 public class ConceptReferenceController1_9 extends BaseRestController {
 
-    @RequestMapping(method = { RequestMethod.GET })
+    private final Log log = LogFactory.getLog(getClass());
+
+    @RequestMapping(method = {RequestMethod.GET})
     @ResponseBody
     public Object getConceptReferences(HttpServletRequest request, HttpServletResponse response, @RequestParam(required = false, name = "references") String references) {
         return handleRequest(request, response, references);
     }
 
-    @RequestMapping(method = { RequestMethod.POST }, consumes = { MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE })
+    @RequestMapping(method = {RequestMethod.POST}, consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
     @ResponseBody
     public Object getConceptReferencesViaForm(HttpServletRequest request, HttpServletResponse response, @RequestParam(required = false, name = "references") String references) {
         return handleRequest(request, response, references);
     }
 
-    @RequestMapping(method = { RequestMethod.POST }, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(method = {RequestMethod.POST}, consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public Object getConceptReferencesViaJson(HttpServletRequest request, HttpServletResponse response, @RequestBody ConceptReferencesRequestDto body) {
         if (body == null || body.getReferences() == null) {
             throw new IllegalArgumentException("References property is required");
         }
-        return handleRequest(request, response, body.getReferences());
+        try {
+            return handleRequest(request, response, body.getReferences());
+        } catch (Exception e) {
+            log.error("Error processing concept references via JSON DTO: " + e.getMessage(), e);
+            throw new ConversionException("An error occurred while parsing or fetching the concept references.");
+        }
     }
 
     private void addResult(SimpleObject results, String conceptReference, Concept concept, Representation rep) {
@@ -114,11 +123,4 @@ public class ConceptReferenceController1_9 extends BaseRestController {
         return new SimpleObject(0);
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    @ResponseBody
-    public SimpleObject handleIllegalArgumentException(IllegalArgumentException exception, HttpServletResponse response) {
-        int status = HttpServletResponse.SC_BAD_REQUEST;
-        response.setStatus(status);
-        return buildCleanErrorResponse(status, "Bad Request", exception.getMessage());
-    }
 }

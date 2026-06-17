@@ -82,18 +82,22 @@ public class ImplementationIdController2_0Test extends RestControllerTestUtils {
 	}
 
 	@Test
-    public void updateCurrentConfiguration_shouldReturnForbiddenWhenAnonymous() throws Exception {
-        java.lang.reflect.Method postMethod = ImplementationIdController2_0.class.getMethod("updateCurrentConfiguration", org.openmrs.ImplementationId.class);
-        
-        Assert.assertTrue("The updateCurrentConfiguration method must have the @Authorized annotation", 
-            postMethod.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
-            
-        org.openmrs.annotation.Authorized methodAuth = postMethod.getAnnotation(org.openmrs.annotation.Authorized.class);
-        java.util.List<String> privileges = java.util.Arrays.asList(methodAuth.value());
-        
-        Assert.assertTrue("Method level annotation must require MANAGE_IMPLEMENTATION_ID", 
-            privileges.contains(org.openmrs.util.PrivilegeConstants.MANAGE_IMPLEMENTATION_ID));
-    }
+	public void updateCurrentConfiguration_shouldReturnForbiddenWhenAnonymous() throws Exception {
+		// Pas het argument aan naar de DTO klasse:
+		java.lang.reflect.Method postMethod = ImplementationIdController2_0.class.getMethod(
+				"updateCurrentConfiguration",
+				org.openmrs.module.webservices.rest.web.v1_0.dto.ImplementationIdRequestDto.class
+		);
+
+		Assert.assertTrue("The updateCurrentConfiguration method must have the @Authorized annotation",
+				postMethod.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
+
+		org.openmrs.annotation.Authorized methodAuth = postMethod.getAnnotation(org.openmrs.annotation.Authorized.class);
+		java.util.List<String> privileges = java.util.Arrays.asList(methodAuth.value());
+
+		Assert.assertTrue("Method level annotation must require MANAGE_IMPLEMENTATION_ID",
+				privileges.contains(org.openmrs.util.PrivilegeConstants.MANAGE_IMPLEMENTATION_ID));
+	}
 
     @Test
     public void getCurrentConfiguration_shouldReturnForbiddenWhenAnonymous() throws Exception {

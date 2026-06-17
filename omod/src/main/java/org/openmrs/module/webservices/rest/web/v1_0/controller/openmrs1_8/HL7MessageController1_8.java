@@ -13,7 +13,7 @@ import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.codehaus.jackson.map.ObjectMapper; // Toegevoegd voor nette DTO mapping
+import org.codehaus.jackson.map.ObjectMapper;
 import org.openmrs.annotation.Authorized;
 import org.openmrs.api.context.Context;
 import org.openmrs.hl7.HL7Source;
@@ -27,13 +27,12 @@ import org.openmrs.module.webservices.rest.web.response.ResponseException;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.MainResourceController;
 import org.openmrs.module.webservices.rest.web.v1_0.resource.openmrs1_8.HL7MessageResource1_8;
-import org.openmrs.module.webservices.rest.web.v1_0.dto.HL7RequestDto; // DTO Import
+import org.openmrs.module.webservices.rest.web.v1_0.dto.HL7RequestDto;
 import org.openmrs.util.PrivilegeConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -59,20 +58,26 @@ public class HL7MessageController1_8 extends BaseRestController {
 	@ResponseBody
 	@Authorized({PrivilegeConstants.MANAGE_HL7_MESSAGES})
 	public Object create(@RequestBody String hl7, HttpServletRequest request, HttpServletResponse response)
-			throws ResponseException, IOException {
+			throws ResponseException {
 		RequestContext context = RestUtil.getRequestContext(request, response);
 		SimpleObject post = new SimpleObject();
+
+		if (hl7 == null || hl7.trim().isEmpty()) {
+			throw new ConversionException("Request body cannot be empty");
+		}
 
 		if (hl7.trim().startsWith("{")) {
 			try {
 				HL7RequestDto dto = objectMapper.readValue(hl7, HL7RequestDto.class);
+				if (dto == null || dto.getHl7() == null) {
+					throw new ConversionException("Missing the hl7 property in JSON payload");
+				}
 				hl7 = dto.getHl7();
+			} catch (IOException e) {
+				// Eventuele IOException van de Jackson ObjectMapper direct veilig omzetten naar ConversionException
+				throw new ConversionException("Malformed or unreadable JSON request body.", e);
 			} catch (Exception e) {
 				throw new ConversionException("Invalid JSON format in HL7 request", e);
-			}
-
-			if (hl7 == null || hl7.trim().isEmpty()) {
-				throw new ConversionException("Missing the hl7 property in JSON payload");
 			}
 		}
 
@@ -107,15 +112,5 @@ public class HL7MessageController1_8 extends BaseRestController {
 	@Authorized({PrivilegeConstants.GET_HL7_SOURCE})
 	public SimpleObject get(HttpServletRequest request, HttpServletResponse response) throws ResponseException {
 		return mainResourceController.get("hl7", request, response);
-	}
-
-
-	@ExceptionHandler(ConversionException.class)
-	@ResponseBody
-	public SimpleObject handleConversionException(ConversionException exception, HttpServletResponse response) {
-		int status = HttpServletResponse.SC_BAD_REQUEST; // 400 Bad Request
-		response.setStatus(status);
-
-		return buildCleanErrorResponse(status, "Bad Request", exception.getMessage());
 	}
 }

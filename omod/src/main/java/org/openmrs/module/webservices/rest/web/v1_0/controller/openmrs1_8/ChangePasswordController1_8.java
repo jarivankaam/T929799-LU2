@@ -57,7 +57,7 @@ public class ChangePasswordController1_8 extends BaseRestController {
 			Context.getUserService().changePassword(oldPassword, newPassword);
 		}
 		catch (APIException ex) {
-			throw new ValidationException(ex.getMessage());
+			throw new ValidationException("Password change failed. Ensure the old password is correct and the new password meets the system complexity requirements.");
 		}
 		finally {
 			Context.removeProxyPrivilege(PrivilegeConstants.GET_GLOBAL_PROPERTIES);
@@ -67,7 +67,6 @@ public class ChangePasswordController1_8 extends BaseRestController {
 	@RequestMapping(value = "/{userUuid}", method = RequestMethod.POST)
 	@ResponseStatus(HttpStatus.OK)
 	@Authorized({PrivilegeConstants.EDIT_USER_PASSWORDS})
-	@ExceptionHandler(NullPointerException.class)
 	public void changeOthersPassword(@PathVariable("userUuid") String userUuid, @RequestBody ChangeOtherPasswordRequest request) {
 
 		if (request == null || request.getNewPassword() == null) {
@@ -99,7 +98,6 @@ public class ChangePasswordController1_8 extends BaseRestController {
 		int status = HttpServletResponse.SC_NOT_FOUND;
 		response.setStatus(status);
 
-		// Maakt nu gebruik van de schone methode uit de BaseRestController
 		return buildCleanErrorResponse(status, "Not Found", "User not found");
 	}
 }

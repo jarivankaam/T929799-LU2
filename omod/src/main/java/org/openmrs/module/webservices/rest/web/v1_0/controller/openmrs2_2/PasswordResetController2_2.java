@@ -14,7 +14,6 @@ import org.openmrs.api.InvalidActivationKeyException;
 import org.openmrs.api.UserService;
 import org.openmrs.api.ValidationException;
 import org.openmrs.api.context.Context;
-import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
 import org.openmrs.module.webservices.rest.web.v1_0.dto.PasswordResetRequestDto;
@@ -24,15 +23,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
-
-import javax.servlet.http.HttpServletResponse;
 
 @Controller
 @RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/passwordreset")
@@ -75,29 +70,5 @@ public class PasswordResetController2_2 extends BaseRestController {
 		catch (InvalidActivationKeyException ex) {
 			throw new ValidationException(ex.getMessage());
 		}
-	}
-
-	@ExceptionHandler(ValidationException.class)
-	@ResponseBody
-	public SimpleObject handleValidationException(ValidationException exception, HttpServletResponse response) {
-		int status = HttpServletResponse.SC_BAD_REQUEST;
-		response.setStatus(status);
-		return buildCleanErrorResponse(status, "Bad Request", exception.getMessage());
-	}
-
-	@ExceptionHandler(MessageException.class)
-	@ResponseBody
-	public SimpleObject handleMessageException(MessageException exception, HttpServletResponse response) {
-		int status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-		response.setStatus(status);
-		return buildCleanErrorResponse(status, "Internal Server Error", exception.getMessage());
-	}
-
-	@ExceptionHandler(Exception.class)
-	@ResponseBody
-	public SimpleObject handleException(Exception exception, HttpServletResponse response) {
-		int status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-		response.setStatus(status);
-		return buildCleanErrorResponse(status, "Internal Server Error", exception.getMessage());
 	}
 }

@@ -12,7 +12,6 @@ package org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs2_0;
 import org.apache.commons.lang3.StringUtils;
 import org.openmrs.annotation.Authorized;
 import org.openmrs.api.context.Context;
-import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.RestUtil;
 import org.openmrs.module.webservices.rest.web.api.RestService;
@@ -26,14 +25,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
-
-import javax.servlet.http.HttpServletResponse;
 
 @Controller("webservices.rest.searchIndexController2_0")
 @RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/searchindexupdate", method = RequestMethod.POST)
@@ -48,7 +43,7 @@ public class SearchIndexController2_0 extends BaseRestController {
 	@RequestMapping
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	@Authorized({PrivilegeConstants.MANAGE_SEARCH_INDEX, PrivilegeConstants.VIEW_ADMIN_FUNCTIONS})
-	public void updateSearchIndex(@RequestBody(required = false) SearchIndexUpdateRequestDto body) throws Exception {
+	public void updateSearchIndex(@RequestBody(required = false) SearchIndexUpdateRequestDto body) {
 		String resourceName = null;
 		String subResourceName = null;
 		boolean async = false;
@@ -90,13 +85,5 @@ public class SearchIndexController2_0 extends BaseRestController {
 				Context.updateSearchIndexForObject(object);
 			}
 		}
-	}
-
-	@ExceptionHandler(Exception.class)
-	@ResponseBody
-	public SimpleObject handleException(Exception exception, HttpServletResponse response) {
-		int status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-		response.setStatus(status);
-		return buildCleanErrorResponse(status, "Internal Server Error", exception.getMessage());
 	}
 }

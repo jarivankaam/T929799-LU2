@@ -12,7 +12,6 @@ package org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs2_0;
 import org.openmrs.annotation.Authorized;
 import org.openmrs.layout.address.AddressSupport;
 import org.openmrs.layout.address.AddressTemplate;
-import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.representation.Representation;
 import org.openmrs.module.webservices.rest.web.resource.impl.BaseDelegatingConverter;
@@ -23,13 +22,10 @@ import org.openmrs.module.webservices.rest.web.v1_0.helper.LayoutTemplateProvide
 import org.openmrs.serialization.SerializationException;
 import org.openmrs.util.PrivilegeConstants;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.WebRequest;
-
-import javax.servlet.http.HttpServletResponse;
 
 @Controller
 @RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/addresstemplate")
@@ -44,14 +40,6 @@ public class AddressTemplateController2_0 extends BaseRestController {
 
 		Converter converter = new Converter();
 		return converter.asRepresentation(addressTemplate, Representation.DEFAULT);
-	}
-
-	@ExceptionHandler(SerializationException.class)
-	@ResponseBody
-	public SimpleObject handleSerializationException(SerializationException exception, HttpServletResponse response) {
-		int status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-		response.setStatus(status);
-		return buildCleanErrorResponse(status, "Internal Server Error", exception.getMessage());
 	}
 
 	private static class AddressTemplateProvider extends LayoutTemplateProvider<AddressTemplate> {

@@ -15,7 +15,6 @@ import org.openmrs.OpenmrsObject;
 import org.openmrs.User;
 import org.openmrs.annotation.Authorized;
 import org.openmrs.api.context.Context;
-import org.openmrs.module.webservices.rest.SimpleObject;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.RestUtil;
 import org.openmrs.module.webservices.rest.web.api.RestService;
@@ -29,14 +28,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
-
-import javax.servlet.http.HttpServletResponse;
 
 @Controller("webservices.rest.DbCacheController")
 @RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/cleardbcache", method = RequestMethod.POST)
@@ -54,7 +49,7 @@ public class ClearDbCacheController2_0 extends BaseRestController {
 
 	@RequestMapping
 	@ResponseStatus(HttpStatus.NO_CONTENT)
-	public void clearDbCache(@RequestBody(required = false) ClearDbCacheRequestDto body) throws Exception {
+	public void clearDbCache(@RequestBody(required = false) ClearDbCacheRequestDto body) {
 		String resourceName = null;
 		String subResourceName = null;
 		String uuid = null;
@@ -67,10 +62,6 @@ public class ClearDbCacheController2_0 extends BaseRestController {
 
 		SessionFactory sf = Context.getRegisteredComponents(SessionFactory.class).get(0);
 		if (StringUtils.isBlank(resourceName)) {
-			if (log.isDebugEnabled()) {
-				log.debug("Clearing DB cache via REST");
-			}
-
 			sf.getCache().evictAllRegions();
 		} else {
 			if (StringUtils.isNotBlank(subResourceName)) {
@@ -78,42 +69,26 @@ public class ClearDbCacheController2_0 extends BaseRestController {
 			}
 
 			Resource resource = restService.getResourceByName(buildResourceName(resourceName));
+			if (resource == null) {
+				return;
+			}
+
 			Class<?> supportedClass = RestUtil.getSupportedClass(resource);
 			if (StringUtils.isBlank(uuid)) {
-				if (log.isDebugEnabled()) {
-					log.debug("Clearing DB cache via REST for resource: {} ({})", resourceName, supportedClass);
-				}
-
 				sf.getCache().evictEntityRegion(supportedClass);
 			} else {
-				if (log.isDebugEnabled()) {
-					log.debug("Clearing DB cache via REST for resource: {} ({}) with uuid: {}",
-							new Object[] { resourceName, supportedClass, uuid });
-				}
-
 				OpenmrsObject object = (OpenmrsObject) ((BaseDelegatingResource) resource).getByUniqueId(uuid);
 				if ("user".equals(resourceName)) {
 					supportedClass = User.class;
 				}
 
-				if (object == null) {
-					log.info("No {} found with uuid: {}", supportedClass.getSimpleName(), uuid);
-					return;
+				if (object != null) {
+					sf.getCache().evictEntity(supportedClass, object.getId());
 				}
-
-				sf.getCache().evictEntity(supportedClass, object.getId());
 			}
 
 			sf.getCache().evictCollectionRegions();
 			sf.getCache().evictQueryRegions();
 		}
-	}
-
-	@ExceptionHandler(Exception.class)
-	@ResponseBody
-	public SimpleObject handleException(Exception exception, HttpServletResponse response) {
-		int status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-		response.setStatus(status);
-		return buildCleanErrorResponse(status, "Internal Server Error", exception.getMessage());
 	}
 }
