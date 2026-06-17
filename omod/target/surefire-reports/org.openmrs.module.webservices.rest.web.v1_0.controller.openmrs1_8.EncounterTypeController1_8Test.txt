@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_8.EncounterTypeController1_8Test
--------------------------------------------------------------------------------
-Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.236 s -- in org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_8.EncounterTypeController1_8Test

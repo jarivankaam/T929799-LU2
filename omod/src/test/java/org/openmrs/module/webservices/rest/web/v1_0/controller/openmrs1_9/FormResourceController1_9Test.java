@@ -138,7 +138,6 @@ public class FormResourceController1_9Test extends MainResourceControllerTest {
 
 		MockMultipartHttpServletRequest request = new MockMultipartHttpServletRequest();
 
-		//Posting to uri of the form /ws/rest/v1/form/{uuid}/resource/{uuid}/value
 		String uri = getBaseRestURI() + getURI() + "/" + getUuid() + "/value";
 		request.setRequestURI(uri);
 		request.setMethod(RequestMethod.POST.name());
@@ -153,7 +152,6 @@ public class FormResourceController1_9Test extends MainResourceControllerTest {
 		Assert.assertNotEquals(valueReferenceBefore, valueReferenceAfter);
 		Assert.assertNotNull(datatypeService.getClobDatatypeStorageByUuid(valueReferenceAfter));
 
-
 		int status = response.getStatus();
 		Assert.assertTrue("Expected SC_OK or SC_CREATED but was " + status,
 				status == HttpServletResponse.SC_OK || status == HttpServletResponse.SC_CREATED);
@@ -161,7 +159,6 @@ public class FormResourceController1_9Test extends MainResourceControllerTest {
 
 	@Test
 	public void shouldRetrieveResourceValueAsFile() throws Exception {
-		// Get the clobData for the resource
 		FormResource resource = formService.getFormResourceByUuid(getUuid());
 		ClobDatatypeStorage clobData = datatypeService.getClobDatatypeStorageByUuid(resource.getValueReference());
 
@@ -195,6 +192,34 @@ public class FormResourceController1_9Test extends MainResourceControllerTest {
 
 		FormResource editedForm = formService.getFormResourceByUuid(getUuid());
 		Assert.assertEquals(EDITED_NAME, editedForm.getName());
+	}
+
+	@Test
+	public void createResourceValue_shouldReturnForbiddenWhenAnonymous() throws Exception {
+		java.lang.reflect.Method method = FormResourceController1_9.class.getMethod(
+				"createResourceValue", String.class, String.class, org.springframework.web.multipart.MultipartFile.class, javax.servlet.http.HttpServletRequest.class, javax.servlet.http.HttpServletResponse.class
+		);
+
+		Assert.assertTrue("The createResourceValue methode must have the @Authorized annotation",
+				method.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
+
+		org.openmrs.annotation.Authorized auth = method.getAnnotation(org.openmrs.annotation.Authorized.class);
+		Assert.assertEquals("The required privilege must be MANAGE_FORMS",
+				org.openmrs.util.PrivilegeConstants.MANAGE_FORMS, auth.value()[0]);
+	}
+
+	@Test
+	public void getResourceValue_shouldReturnForbiddenWhenAnonymous() throws Exception {
+		java.lang.reflect.Method method = FormResourceController1_9.class.getMethod(
+				"getResourceValue", String.class, String.class, javax.servlet.http.HttpServletRequest.class, javax.servlet.http.HttpServletResponse.class
+		);
+
+		Assert.assertTrue("The getResourceValue methode must have the @Authorized annotation",
+				method.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
+
+		org.openmrs.annotation.Authorized auth = method.getAnnotation(org.openmrs.annotation.Authorized.class);
+		Assert.assertEquals("The required privilege must be GET_FORMS",
+				org.openmrs.util.PrivilegeConstants.GET_FORMS, auth.value()[0]);
 	}
 
 	@Override

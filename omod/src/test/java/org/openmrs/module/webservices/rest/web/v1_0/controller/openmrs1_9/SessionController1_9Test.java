@@ -55,10 +55,6 @@ public class SessionController1_9Test extends BaseModuleWebContextSensitiveTest 
 		Context.getUserContext().setLocation(Context.getLocationService().getLocationByUuid(UNKNOWN_LOCATION_UUID));
 	}
 
-	/**
-	 * @see SessionController1_9#delete(HttpServletRequest)
-	 * @verifies log the client out
-	 */
 	@Test
 	public void delete_shouldLogTheClientOut() throws Exception {
 		Assert.assertTrue(Context.isAuthenticated());
@@ -67,10 +63,6 @@ public class SessionController1_9Test extends BaseModuleWebContextSensitiveTest 
 		Assert.assertNull(hsr.getSession(false));
 	}
 
-	/**
-	 * @see SessionController1_9#get()
-	 * @verifies return the session id if the user is authenticated
-	 */
 	@Test
 	public void get_shouldReturnTheUserIfTheUserIsAuthenticated() throws Exception {
 		Assert.assertTrue(Context.isAuthenticated());
@@ -92,12 +84,10 @@ public class SessionController1_9Test extends BaseModuleWebContextSensitiveTest 
 	public void get_shouldReturnLocaleInfoIfTheUserIsNotAuthenticated() throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
 		Assert.assertTrue(Context.isAuthenticated());
 
-		// log out the current authenticated user
 		controller.delete(hsr);
 		Assert.assertFalse(Context.isAuthenticated());
 		Assert.assertNull(hsr.getSession(false));
 
-		// check if the unauthenticated user response has locale and allowedLocales
 		Object ret = controller.get();
 		Assert.assertEquals(Context.getLocale(), PropertyUtils.getProperty(ret, "locale"));
 		Assert.assertArrayEquals(Context.getAdministrationService().getAllowedLocales().toArray(),
@@ -123,10 +113,6 @@ public class SessionController1_9Test extends BaseModuleWebContextSensitiveTest 
 				loc.toString().contains("display=Unknown Location"));
 	}
 
-	/**
-	 * @see SessionController1_9#get()
-	 * @verifies return the session with current provider if the user is authenticated
-	 */
 	@Test
 	public void get_shouldReturnCurrentProviderIfTheUserIsAuthenticated() throws Exception {
 		Assert.assertTrue(Context.isAuthenticated());
@@ -182,6 +168,30 @@ public class SessionController1_9Test extends BaseModuleWebContextSensitiveTest 
 		Object responseLoc = PropertyUtils.getProperty(ret, "sessionLocation");
 		Assert.assertTrue(responseLoc.toString() + " should contain 'display=Xanadu'",
 				responseLoc.toString().contains("display=Xanadu"));
+	}
+
+	@Test
+	public void getDiagnostics_shouldReturnForbiddenWhenAnonymous() throws Exception {
+		java.lang.reflect.Method method = SessionController1_9.class.getMethod(
+				"getDiagnostics", String.class
+		);
+
+		Assert.assertTrue("The getDiagnostics methode must have the @Authorized annotation",
+				method.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
+
+		org.openmrs.annotation.Authorized auth = method.getAnnotation(org.openmrs.annotation.Authorized.class);
+		Assert.assertEquals("The required privilege must be VIEW_ADMIN_FUNCTIONS",
+				org.openmrs.util.PrivilegeConstants.VIEW_ADMIN_FUNCTIONS, auth.value()[0]);
+	}
+
+	@Test
+	public void getDiagnostics_shouldAllowAccessWhenUserIsAdmin() throws Exception {
+		java.lang.reflect.Method method = SessionController1_9.class.getMethod(
+				"getDiagnostics", String.class
+		);
+
+		Assert.assertTrue("The getDiagnostics methode must be correctly annotated for admin functions",
+				method.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
 	}
 
 	@Test(expected = APIException.class)
