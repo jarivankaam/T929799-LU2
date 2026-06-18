@@ -1,0 +1,202 @@
+/**
+ * This Source Code Form is subject to the terms of the Mozilla Public License,
+ * v. 2.0. If a copy of the MPL was not distributed with this file, You can
+ * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
+ * the terms of the Healthcare Disclaimer located at http://openmrs.org/license.
+ *
+ * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
+ * graphic logo is a trademark of OpenMRS Inc.
+ */
+package org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_9;
+
+import org.apache.commons.beanutils.PropertyUtils;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.openmrs.GlobalProperty;
+import org.openmrs.Location;
+import org.openmrs.api.APIException;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.webservices.rest.web.v1_0.dto.SessionRequestDto;
+import org.openmrs.util.OpenmrsConstants;
+import org.openmrs.web.test.BaseModuleWebContextSensitiveTest;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpSession;
+import org.springframework.mock.web.MockServletContext;
+
+import javax.servlet.http.HttpServletRequest;
+import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+
+public class SessionController1_9Test extends BaseModuleWebContextSensitiveTest {
+
+	private static final String SESSION_ID = "test-session-id";
+
+	private static final String UNKNOWN_LOCATION_UUID = "8d6c993e-c2cc-11de-8d13-0010c6dffd0f"; // Unknown Location
+
+	private static final String XANADU_UUID = "9356400c-a5a2-4532-8f2b-2361b3446eb8"; // Xanadu
+
+	private SessionController1_9 controller;
+
+	private HttpServletRequest hsr;
+
+	@Before
+	public void before() {
+		controller = Context.getRegisteredComponents(SessionController1_9.class).iterator().next(); // should only be 1
+		MockHttpServletRequest mockHsr = new MockHttpServletRequest();
+		mockHsr.setSession(new MockHttpSession(new MockServletContext(), SESSION_ID));
+		hsr = mockHsr;
+
+		Context.getAdministrationService().saveGlobalProperty(
+				new GlobalProperty(OpenmrsConstants.GLOBAL_PROPERTY_LOCALE_ALLOWED_LIST, "en_GB, sp, fr"));
+		Context.getUserContext().setLocation(Context.getLocationService().getLocationByUuid(UNKNOWN_LOCATION_UUID));
+	}
+
+	@Test
+	public void delete_shouldLogTheClientOut() throws Exception {
+		Assert.assertTrue(Context.isAuthenticated());
+		controller.delete(hsr);
+		Assert.assertFalse(Context.isAuthenticated());
+		Assert.assertNull(hsr.getSession(false));
+	}
+
+	@Test
+	public void get_shouldReturnTheUserIfTheUserIsAuthenticated() throws Exception {
+		Assert.assertTrue(Context.isAuthenticated());
+		Object ret = controller.get();
+		Object userProp = PropertyUtils.getProperty(ret, "user");
+		@SuppressWarnings("unchecked")
+		List<HashMap<String, String>> userRoles = (List<HashMap<String, String>>) PropertyUtils.getProperty(userProp,
+				"roles");
+		Assert.assertEquals("System Developer", userRoles.get(0).get("name"));
+		Assert.assertEquals(true, PropertyUtils.getProperty(ret, "authenticated"));
+		Assert.assertEquals(Context.getAuthenticatedUser().getUuid(), PropertyUtils.getProperty(userProp, "uuid"));
+		Object personProp = PropertyUtils.getProperty(userProp, "person");
+		Assert.assertEquals(Context.getAuthenticatedUser().getPerson().getUuid(),
+				PropertyUtils.getProperty(personProp, "uuid"));
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void get_shouldReturnLocaleInfoIfTheUserIsNotAuthenticated() throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+		Assert.assertTrue(Context.isAuthenticated());
+
+		controller.delete(hsr);
+		Assert.assertFalse(Context.isAuthenticated());
+		Assert.assertNull(hsr.getSession(false));
+
+		Object ret = controller.get();
+		Assert.assertEquals(Context.getLocale(), PropertyUtils.getProperty(ret, "locale"));
+		Assert.assertArrayEquals(Context.getAdministrationService().getAllowedLocales().toArray(),
+				((List<Locale>) PropertyUtils.getProperty(ret, "allowedLocales")).toArray());
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void get_shouldReturnLocaleInfoIfTheUserIsAuthenticated() throws Exception {
+		Assert.assertTrue(Context.isAuthenticated());
+		Object ret = controller.get();
+		Assert.assertEquals(Context.getLocale(), PropertyUtils.getProperty(ret, "locale"));
+		Assert.assertArrayEquals(Context.getAdministrationService().getAllowedLocales().toArray(),
+				((List<Locale>) PropertyUtils.getProperty(ret, "allowedLocales")).toArray());
+	}
+
+	@Test
+	public void get_shouldReturnLocationIfTheUserIsAuthenticated() throws Exception {
+		Assert.assertTrue(Context.isAuthenticated());
+		Object ret = controller.get();
+		Object loc = PropertyUtils.getProperty(ret, "sessionLocation");
+		Assert.assertTrue(loc.toString() + " should contain 'display=Unknown Location'",
+				loc.toString().contains("display=Unknown Location"));
+	}
+
+	@Test
+	public void get_shouldReturnCurrentProviderIfTheUserIsAuthenticated() throws Exception {
+		Assert.assertTrue(Context.isAuthenticated());
+		Object ret = controller.get();
+		Object currentProvider = PropertyUtils.getProperty(ret, "currentProvider");
+		Assert.assertNotNull(currentProvider);
+		Assert.assertTrue(currentProvider.toString().contains("Super User"));
+	}
+
+	@Test
+	public void post_shouldReturnTheCurrentSession() throws Exception{
+		String content = "{}";
+		Object ret = controller.post(hsr, new ObjectMapper().readValue(content, SessionRequestDto.class));
+		Object currentProvider = PropertyUtils.getProperty(ret, "currentProvider");
+		Assert.assertNotNull(currentProvider);
+		Assert.assertTrue(currentProvider.toString().contains("Super User"));
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void post_shouldSetTheUserLocale() throws Exception {
+		Locale newLocale = new Locale("sp");
+		String content = "{\"locale\":\"" + newLocale.toString() + "\"}";
+		Assert.assertNotEquals(newLocale, Context.getLocale());
+		Object ret = controller.post(hsr, new ObjectMapper().readValue(content, SessionRequestDto.class));
+		Assert.assertEquals(newLocale, Context.getLocale());
+		Assert.assertEquals(Context.getLocale(), PropertyUtils.getProperty(ret, "locale"));
+		Assert.assertArrayEquals(Context.getAdministrationService().getAllowedLocales().toArray(),
+				((List<Locale>) PropertyUtils.getProperty(ret, "allowedLocales")).toArray());
+	}
+
+	@Test(expected = APIException.class)
+	public void post_shouldFailWhenSettingIllegalLocale() throws Exception {
+		String newLocale = "fOOb@r:";
+		String content = "{\"locale\":\"" + newLocale + "\"}";
+		controller.post(hsr, new ObjectMapper().readValue(content, SessionRequestDto.class));
+	}
+
+	@Test(expected = APIException.class)
+	public void post_shouldFailWhenSettingDisallowedLocale() throws Exception {
+		String newLocale = "km_KH";
+		String content = "{\"locale\":\"" + newLocale + "\"}";
+		controller.post(hsr, new ObjectMapper().readValue(content, SessionRequestDto.class));
+	}
+
+	@Test
+	public void post_shouldSetTheSessionLocation() throws Exception {
+		String content = "{\"sessionLocation\":\"" + XANADU_UUID + "\"}";
+		Location loc = Context.getLocationService().getLocationByUuid(XANADU_UUID);
+		Assert.assertNotEquals(loc, Context.getUserContext().getLocation());
+		Object ret = controller.post(hsr, new ObjectMapper().readValue(content, SessionRequestDto.class));
+		Assert.assertEquals(loc, Context.getUserContext().getLocation());
+		Object responseLoc = PropertyUtils.getProperty(ret, "sessionLocation");
+		Assert.assertTrue(responseLoc.toString() + " should contain 'display=Xanadu'",
+				responseLoc.toString().contains("display=Xanadu"));
+	}
+
+	@Test
+	public void getDiagnostics_shouldReturnForbiddenWhenAnonymous() throws Exception {
+		java.lang.reflect.Method method = SessionController1_9.class.getMethod(
+				"getDiagnostics", String.class
+		);
+
+		Assert.assertTrue("The getDiagnostics methode must have the @Authorized annotation",
+				method.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
+
+		org.openmrs.annotation.Authorized auth = method.getAnnotation(org.openmrs.annotation.Authorized.class);
+		Assert.assertEquals("The required privilege must be VIEW_ADMIN_FUNCTIONS",
+				org.openmrs.util.PrivilegeConstants.VIEW_ADMIN_FUNCTIONS, auth.value()[0]);
+	}
+
+	@Test
+	public void getDiagnostics_shouldAllowAccessWhenUserIsAdmin() throws Exception {
+		java.lang.reflect.Method method = SessionController1_9.class.getMethod(
+				"getDiagnostics", String.class
+		);
+
+		Assert.assertTrue("The getDiagnostics methode must be correctly annotated for admin functions",
+				method.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
+	}
+
+	@Test(expected = APIException.class)
+	public void post_shouldFailWhenSettingNonexistantLocation() throws Exception {
+		String content = "{\"sessionLocation\":\"fake-nonexistant-uuid\"}";
+		controller.post(hsr, new ObjectMapper().readValue(content, SessionRequestDto.class));
+	}
+}

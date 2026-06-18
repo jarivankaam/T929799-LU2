@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs2_5.OrderAttributeTypeController2_5Test
+-------------------------------------------------------------------------------
+Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.375 s -- in org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs2_5.OrderAttributeTypeController2_5Test
