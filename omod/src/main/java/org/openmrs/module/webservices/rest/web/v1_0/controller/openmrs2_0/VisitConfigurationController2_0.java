@@ -26,6 +26,7 @@ import org.openmrs.module.webservices.rest.web.representation.Representation;
 import org.openmrs.module.webservices.rest.web.response.IllegalPropertyException;
 import org.openmrs.module.webservices.rest.web.response.IllegalRequestException;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
+import org.openmrs.module.webservices.rest.web.v1_0.dto.VisitConfigurationRequestDto;
 import org.openmrs.module.webservices.rest.web.v1_0.wrapper.VisitConfiguration;
 import org.openmrs.scheduler.SchedulerException;
 import org.openmrs.scheduler.SchedulerService;
@@ -72,33 +73,47 @@ public class VisitConfigurationController2_0 extends BaseRestController {
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseStatus(HttpStatus.OK)
 	@Authorized({PrivilegeConstants.CONFIGURE_VISITS})
-	public void updateCurrentConfiguration(@RequestBody VisitConfiguration newConfiguration) throws SchedulerException {
+	public void updateCurrentConfiguration(@RequestBody VisitConfigurationRequestDto body) throws SchedulerException {
 		Context.requirePrivilege(PrivilegeConstants.CONFIGURE_VISITS);
 		AdministrationService administrationService = Context.getAdministrationService();
 		EncounterService encounterService = Context.getEncounterService();
 		VisitService visitService = Context.getVisitService();
 		SchedulerService schedulerService = Context.getSchedulerService();
 
-		// validate
-		if (newConfiguration.getEnableVisits() && StringUtils.isEmpty(newConfiguration.getEncounterVisitsAssignmentHandler())) {
+		boolean isEnabled = (body != null && body.getEnableVisits() != null) ? body.getEnableVisits() : false;
+		String handler = (body != null) ? body.getEncounterVisitsAssignmentHandler() : null;
+
+		if (isEnabled && StringUtils.isEmpty(handler)) {
 			throw new IllegalRequestException("Encounter Visit assignment handler cannot be empty");
 		}
 
 		administrationService
-				.setGlobalProperty(OpenmrsConstants.GLOBAL_PROPERTY_ENABLE_VISITS, Boolean.toString(newConfiguration.getEnableVisits()));
+				.setGlobalProperty(OpenmrsConstants.GLOBAL_PROPERTY_ENABLE_VISITS, Boolean.toString(isEnabled));
 
-		if (newConfiguration.getEnableVisits()) {
-			String newEncounterVisitsAssignmentHandler = newConfiguration.getEncounterVisitsAssignmentHandler();
-			if (isEncounterVisitsAssignmentHandlerValid(newEncounterVisitsAssignmentHandler, encounterService)) {
+		if (isEnabled) {
+			if (isEncounterVisitsAssignmentHandlerValid(handler, encounterService)) {
 				administrationService
-						.setGlobalProperty(OpenmrsConstants.GP_VISIT_ASSIGNMENT_HANDLER, newEncounterVisitsAssignmentHandler);
+						.setGlobalProperty(OpenmrsConstants.GP_VISIT_ASSIGNMENT_HANDLER, handler);
 			} else {
 				throw new IllegalPropertyException(
-						"Provided encounterVisitsAssignmentHandler class " + newEncounterVisitsAssignmentHandler + " does not exist.");
+						"Provided encounterVisitsAssignmentHandler class " + handler + " does not exist.");
 			}
 		}
-		updateGetAutoCloseVisitsTaskStartedValue(schedulerService, newConfiguration.getStartAutoCloseVisitsTask());
-		updateVisitTypesToAutoCloseValue(administrationService, visitService, newConfiguration.getVisitTypesToAutoClose());
+
+		Boolean autoCloseStarted = (body != null && body.getStartAutoCloseVisitsTask() != null) ? body.getStartAutoCloseVisitsTask() : false;
+		updateGetAutoCloseVisitsTaskStartedValue(schedulerService, autoCloseStarted);
+
+		List<VisitType> visitTypesToAutoClose = new ArrayList<>();
+		if (body != null && body.getVisitTypesToAutoClose() != null) {
+			for (VisitConfigurationRequestDto.VisitTypeDto visitTypeDto : body.getVisitTypesToAutoClose()) {
+				if (visitTypeDto != null && visitTypeDto.getUuid() != null) {
+					VisitType vt = new VisitType();
+					vt.setUuid(visitTypeDto.getUuid());
+					visitTypesToAutoClose.add(vt);
+				}
+			}
+		}
+		updateVisitTypesToAutoCloseValue(administrationService, visitService, visitTypesToAutoClose);
 	}
 
 	private Boolean getEnableVisitsValue(AdministrationService administrationService) {
@@ -119,7 +134,7 @@ public class VisitConfigurationController2_0 extends BaseRestController {
 	}
 
 	private void updateGetAutoCloseVisitsTaskStartedValue(SchedulerService schedulerService,
-			Boolean autoCloseVisitsTaskStarted) throws SchedulerException {
+														  Boolean autoCloseVisitsTaskStarted) throws SchedulerException {
 		TaskDefinition closeVisitsTask = schedulerService.getTaskByName(OpenmrsConstants.AUTO_CLOSE_VISITS_TASK_NAME);
 		if (closeVisitsTask != null) {
 			if (autoCloseVisitsTaskStarted && !closeVisitsTask.getStarted()) {
@@ -131,7 +146,7 @@ public class VisitConfigurationController2_0 extends BaseRestController {
 	}
 
 	private List<VisitType> getVisitTypesToAutoCloseValue(AdministrationService administrationService,
-			VisitService visitService) {
+														  VisitService visitService) {
 		String gpValue = administrationService.getGlobalProperty(OpenmrsConstants.GP_VISIT_TYPES_TO_AUTO_CLOSE);
 		if (StringUtils.isNotBlank(gpValue)) {
 			List<VisitType> visitTypes = new ArrayList<>();
@@ -153,8 +168,7 @@ public class VisitConfigurationController2_0 extends BaseRestController {
 	}
 
 	private void updateVisitTypesToAutoCloseValue(AdministrationService administrationService, VisitService visitService,
-			List<VisitType> visitTypesToAutoClose) {
-		// visitTypesToAutoClose contains only uuids, map to full visit types
+												  List<VisitType> visitTypesToAutoClose) {
 		List<String> visitTypesToAutoCloseUuids = visitTypesToAutoClose.stream().map(BaseOpenmrsObject::getUuid)
 				.collect(Collectors.toList());
 		List<VisitType> visitTypesToAutoCloseFull = getVisitTypesByUuids(visitTypesToAutoCloseUuids, visitService);
@@ -170,6 +184,9 @@ public class VisitConfigurationController2_0 extends BaseRestController {
 	}
 
 	private boolean isEncounterVisitsAssignmentHandlerValid(String encounterVisitsAssignmentHandler, EncounterService encounterService) {
+		if (encounterVisitsAssignmentHandler == null) {
+			return false;
+		}
 		for (EncounterVisitHandler visitHandler : encounterService.getEncounterVisitHandlers()) {
 			if (visitHandler.getClass().getName().equals(encounterVisitsAssignmentHandler)) {
 				return true;

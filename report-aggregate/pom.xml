@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.openmrs.module</groupId>
+		<artifactId>webservices.rest</artifactId>
+		<version>3.2.0</version>
+	</parent>
+
+	<artifactId>webservices.rest-report-aggregate</artifactId>
+	<name>Rest Web Services - Coverage Aggregate</name>
+	<description>
+		Code-free module that aggregates JaCoCo execution data from the other
+		modules into a single jacoco.xml so SonarQube sees cross-module coverage
+		(tests in omod that exercise code in omod-common).
+	</description>
+
+	<packaging>jar</packaging>
+
+	<properties>
+		<!-- No source of its own: skip Sonar analysis of this module... -->
+		<sonar.skip>true</sonar.skip>
+		<!-- ...and skip the inherited license + formatter plugins, which expect
+		     files (license-header.txt) that don't exist in this lean module. -->
+		<license.skip>true</license.skip>
+		<format.skip>true</format.skip>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>webservices.rest-omod-common</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>webservices.rest-omod</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>report-aggregate</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report-aggregate</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.build.directory}/site/jacoco-aggregate</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

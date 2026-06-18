@@ -16,6 +16,7 @@ import org.openmrs.module.webservices.rest.web.ConversionUtil;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.representation.Representation;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
+import org.openmrs.module.webservices.rest.web.v1_0.dto.LocaleAndThemeConfigurationRequestDto;
 import org.openmrs.module.webservices.rest.web.v1_0.wrapper.LocaleAndThemeConfiguration;
 import org.openmrs.util.OpenmrsConstants;
 import org.openmrs.util.PrivilegeConstants;
@@ -50,10 +51,15 @@ public class LocaleAndThemeConfigurationController2_0 extends BaseRestController
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseStatus(HttpStatus.OK)
 	@Authorized({PrivilegeConstants.VIEW_ADMIN_FUNCTIONS})
-	public void updateCurrentConfiguration(@RequestBody LocaleAndThemeConfiguration newConfiguration) {
+	public void updateCurrentConfiguration(@RequestBody LocaleAndThemeConfigurationRequestDto body) {
 		AdministrationService administrationService = Context.getAdministrationService();
-		String theme = newConfiguration.getDefaultTheme();
-		String locale = newConfiguration.getDefaultLocale();
+
+		String theme = null;
+		String locale = null;
+		if (body != null) {
+			theme = body.getDefaultTheme();
+			locale = body.getDefaultLocale();
+		}
 
 		administrationService.setGlobalProperty(OpenmrsConstants.GLOBAL_PROPERTY_DEFAULT_THEME, theme);
 		administrationService.setGlobalProperty(OpenmrsConstants.GLOBAL_PROPERTY_DEFAULT_LOCALE, locale);

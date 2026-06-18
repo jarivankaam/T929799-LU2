@@ -54,6 +54,23 @@
 		<apacheTomcatVersion>6.0.53</apacheTomcatVersion>
 		<javaxVersion>4.0.1</javaxVersion>
 		<jacksonVersion>2.19.1</jacksonVersion>
+
+		<!-- ============================================================ -->
+		<!-- SonarQube configuration                                       -->
+		<!-- ============================================================ -->
+		<!-- Both modules' aggregate reports, as a fixed comma-separated   -->
+		<!-- list read by EVERY module's Sonar sensor. omod's tests cover   -->
+		<!-- omod-common's classes, so that coverage lives in omod's report. -->
+		<!-- By giving omod-common's sensor BOTH reports, the coverage of    -->
+		<!-- omod-common classes (from omod's tests) attaches while          -->
+		<!-- omod-common's own sources are in scope. Paths are root-relative -->
+		<!-- via maven.multiModuleProjectDirectory so they resolve the same  -->
+		<!-- in every module. Fixes "File X.java not found in project sources". -->
+		<sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/omod/target/site/jacoco-aggregate/jacoco.xml,${maven.multiModuleProjectDirectory}/omod-common/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+		<!-- Per-module surefire results so Sonar shows test counts -->
+		<sonar.junit.reportPaths>${project.basedir}/target/surefire-reports</sonar.junit.reportPaths>
+		<!-- Tell Sonar to read coverage rather than try to run it -->
+		<sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
 	</properties>
 
 	<!-- TODO: combine/simplify the "dependencyManagement" and "dependency" sections into a single "dependency" section and test/remove any unneeded dependencies -->
@@ -451,24 +468,6 @@
 					</configuration>
 				</plugin>
 				<plugin>
-					<groupId>org.jacoco</groupId>
-					<artifactId>jacoco-maven-plugin</artifactId>
-					<version>0.8.13</version>
-					<configuration>
-						<includes>
-							<include>org/openmrs/**</include>
-						</includes>
-					</configuration>
-					<executions>
-						<execution>
-							<id>prepare-agent</id>
-							<goals>
-								<goal>prepare-agent</goal>
-							</goals>
-						</execution>
-					</executions>
-				</plugin>
-				<plugin>
 					<groupId>org.eluder.coveralls</groupId>
 					<artifactId>coveralls-maven-plugin</artifactId>
 					<version>4.2.0</version>
@@ -523,6 +522,54 @@
 			    <groupId>org.apache.maven.plugins</groupId>
 			    <artifactId>maven-surefire-plugin</artifactId>
 			    <version>3.5.3</version>
+			</plugin>
+
+			<!-- ============================================================ -->
+			<!-- JaCoCo: ACTIVE in every module. prepare-agent wires the agent -->
+			<!-- into surefire; report writes this module's own XML; and       -->
+			<!-- report-aggregate writes an XML that ALSO contains coverage for -->
+			<!-- the modules this one depends on. omod depends on omod-common,  -->
+			<!-- so omod's aggregate covers both, and Sonar matches it against  -->
+			<!-- omod's sources when it scans omod. This is the multi-module    -->
+			<!-- fix: the aggregate is produced and read per-module, in scope.  -->
+			<!-- ============================================================ -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.8.13</version>
+				<configuration>
+					<includes>
+						<include>org/openmrs/**</include>
+					</includes>
+				</configuration>
+				<executions>
+					<!-- 1) Hook the JaCoCo agent into the JVM that runs the tests -->
+					<execution>
+						<id>prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<!-- 2) Per-module report (this module's own classes only) -->
+					<execution>
+						<id>report</id>
+						<phase>test</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+					<!-- 3) Aggregate report: this module + the modules it       -->
+					<!--    depends on. Written to target/site/jacoco-aggregate/  -->
+					<!--    jacoco.xml, which is the path Sonar reads (see the    -->
+					<!--    sonar.coverage.jacoco.xmlReportPaths property above).  -->
+					<execution>
+						<id>report-aggregate</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report-aggregate</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>
@@ -584,29 +631,27 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-source-plugin</artifactId>
-						<version>2.1.2</version>
-						<executions>
-							<execution>
-								<id>attach-sources</id>
-								<goals>
-									<goal>jar</goal>
-								</goals>
-							</execution>
-						</executions>
+						<version>3.2.1</version> <executions>
+						<execution>
+							<id>attach-sources</id>
+							<goals>
+								<goal>jar</goal>
+							</goals>
+						</execution>
+					</executions>
 					</plugin>
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-javadoc-plugin</artifactId>
-						<version>2.8.1</version>
-						<configuration>
-							<tags>
-								<tag>
-									<name>should</name>
-									<placement>a</placement>
-									<head>Should:</head>
-								</tag>
-							</tags>
-						</configuration>
+						<version>3.3.0</version> <configuration>
+						<tags>
+							<tag>
+								<name>should</name>
+								<placement>a</placement>
+								<head>Should:</head>
+							</tag>
+						</tags>
+					</configuration>
 						<executions>
 							<execution>
 								<id>attach-javadocs</id>
@@ -614,8 +659,8 @@
 									<goal>jar</goal>
 								</goals>
 								<configuration>
-					              	<failOnError>false</failOnError>
-					            </configuration>
+									<failOnError>false</failOnError>
+								</configuration>
 							</execution>
 						</executions>
 					</plugin>
@@ -633,6 +678,15 @@
 	</repositories>
 
 	<pluginRepositories>
+		<pluginRepository>
+			<id>central</id>
+			<name>Maven Central</name>
+			<url>https://repo.maven.apache.org/maven2</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</pluginRepository>
+
 		<pluginRepository>
 			<id>openmrs-repo</id>
 			<name>OpenMRS Nexus Repository</name>
