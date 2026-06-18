@@ -58,19 +58,21 @@
 		<!-- ============================================================ -->
 		<!-- SonarQube configuration                                       -->
 		<!-- ============================================================ -->
-		<!-- Both modules' aggregate reports, as a fixed comma-separated   -->
-		<!-- list read by EVERY module's Sonar sensor. omod's tests cover   -->
-		<!-- omod-common's classes, so that coverage lives in omod's report. -->
-		<!-- By giving omod-common's sensor BOTH reports, the coverage of    -->
-		<!-- omod-common classes (from omod's tests) attaches while          -->
-		<!-- omod-common's own sources are in scope. Paths are root-relative -->
-		<!-- via maven.multiModuleProjectDirectory so they resolve the same  -->
-		<!-- in every module. Fixes "File X.java not found in project sources". -->
-		<sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/omod/target/site/jacoco-aggregate/jacoco.xml,${maven.multiModuleProjectDirectory}/omod-common/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+		<!-- All real coverage lives in omod's aggregate report: omod       -->
+		<!-- depends on omod-common, so its report-aggregate contains BOTH  -->
+		<!-- modules' classes. We point Sonar at that SINGLE report. The    -->
+		<!-- empty omod-common aggregate is intentionally omitted: it adds  -->
+		<!-- no coverage and only produced "not found" noise.               -->
+		<!-- The per-module fix that makes omod-common's classes MATCH      -->
+		<!-- against its own sources lives in omod-common/pom.xml, which     -->
+		<!-- points that module's sensor at this same report.               -->
+		<sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/omod/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 		<!-- Per-module surefire results so Sonar shows test counts -->
 		<sonar.junit.reportPaths>${project.basedir}/target/surefire-reports</sonar.junit.reportPaths>
 		<!-- Tell Sonar to read coverage rather than try to run it -->
 		<sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+		<!-- integration-tests has no main sources; don't expect coverage there -->
+		<sonar.coverage.exclusions>**/integration-tests/**</sonar.coverage.exclusions>
 	</properties>
 
 	<!-- TODO: combine/simplify the "dependencyManagement" and "dependency" sections into a single "dependency" section and test/remove any unneeded dependencies -->
@@ -530,8 +532,10 @@
 			<!-- report-aggregate writes an XML that ALSO contains coverage for -->
 			<!-- the modules this one depends on. omod depends on omod-common,  -->
 			<!-- so omod's aggregate covers both, and Sonar matches it against  -->
-			<!-- omod's sources when it scans omod. This is the multi-module    -->
-			<!-- fix: the aggregate is produced and read per-module, in scope.  -->
+			<!-- both modules' sources (the omod-common sensor reads the same   -->
+			<!-- report; see omod-common/pom.xml). This is the multi-module     -->
+			<!-- fix: the aggregate is produced once and read in every module   -->
+			<!-- context, so each class matches where its source actually lives. -->
 			<!-- ============================================================ -->
 			<plugin>
 				<groupId>org.jacoco</groupId>

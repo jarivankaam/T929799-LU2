@@ -9,7 +9,11 @@
 	<packaging>jar</packaging>
 	<name>Rest Web Services Common OMOD</name>
 	<description>OpenMRS module project for Rest Web Services</description>
-
+	
+	<properties>
+		<sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/omod/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+	</properties>
+	
 	<dependencies>
 		<dependency>
 			<groupId>org.apache.tomcat</groupId>
