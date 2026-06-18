@@ -9,7 +9,7 @@
  */
 package org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs2_0;
 
-import org.openmrs.api.context.Context;
+import org.openmrs.annotation.Authorized;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
 import org.openmrs.util.PrivilegeConstants;
@@ -36,10 +36,11 @@ public class LoggedInUsersController2_0 extends BaseRestController {
 	@RequestMapping(method = RequestMethod.GET)
 	@ResponseStatus(HttpStatus.OK)
 	@ResponseBody
+	@Authorized({PrivilegeConstants.GET_USERS})
 	public Object getLoggedInUsers(HttpSession httpSession) {
-		Context.requirePrivilege(PrivilegeConstants.GET_USERS);
 
 		ServletContext servletContext = httpSession.getServletContext();
+		@SuppressWarnings("unchecked")
 		Map<String, String> currentUsers = (Map<String, String>) servletContext.getAttribute(WebConstants.CURRENT_USERS);
 		if (currentUsers == null) {
 			currentUsers = new HashMap<>();

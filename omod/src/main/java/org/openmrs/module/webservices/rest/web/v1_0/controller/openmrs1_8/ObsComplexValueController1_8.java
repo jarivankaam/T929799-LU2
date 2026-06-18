@@ -12,18 +12,24 @@ package org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_8;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.openmrs.Obs;
+import org.openmrs.annotation.Authorized;
 import org.openmrs.api.ObsService;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.response.IllegalRequestException;
+import org.openmrs.module.webservices.rest.web.response.ObjectNotFoundException;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
 import org.openmrs.obs.ComplexData;
+import org.openmrs.util.PrivilegeConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+
 
 import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletResponse;
@@ -33,48 +39,67 @@ import java.io.InputStream;
 @Controller
 @RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/obs")
 public class ObsComplexValueController1_8 extends BaseRestController {
-	
+
+	private final Log log = LogFactory.getLog(getClass());
+
 	@Autowired
 	ObsService obsService;
-	
+
 	@RequestMapping(value = "/{uuid}/value", method = RequestMethod.GET)
+	@Authorized({PrivilegeConstants.GET_OBS})
 	public void getFile(@PathVariable("uuid") String uuid,
-	        @RequestParam(required = false, defaultValue = "RAW_VIEW") String view, HttpServletResponse response)
-	        throws Exception {
+						@RequestParam(required = false, defaultValue = "RAW_VIEW") String view, HttpServletResponse response)
+			throws Exception {
+
 		Obs obs = obsService.getObsByUuid(uuid);
+		if (obs == null) {
+			throw new ObjectNotFoundException();
+		}
+
 		if (!obs.isComplex()) {
 			throw new IllegalRequestException("It is not a complex obs, thus have no data.");
 		}
-		obs = obsService.getComplexObs(obs.getId(), view);
-		ComplexData complexData = obs.getComplexData();
-		
-		String mimeType;
+
 		try {
-			mimeType = BeanUtils.getProperty(complexData, "mimeType");
+			obs = obsService.getComplexObs(obs.getId(), view);
+			ComplexData complexData = obs.getComplexData();
+
+			if (complexData == null || complexData.getData() == null) {
+				throw new IllegalRequestException("Complex data is missing or unreadable.");
+			}
+
+			String mimeType;
+			try {
+				mimeType = BeanUtils.getProperty(complexData, "mimeType");
+			}
+			catch (Exception e) {
+				mimeType = "application/force-download";
+			}
+
+			response.setContentType(mimeType);
+			if (StringUtils.isNotBlank(complexData.getTitle())) {
+				response.setHeader("Content-Disposition", "attachment; filename=" + complexData.getTitle());
+			}
+
+			Object data = complexData.getData();
+			if (data instanceof byte[]) {
+				response.getOutputStream().write((byte[]) data);
+			} else if (data instanceof InputStream) {
+				IOUtils.copy((InputStream) data, response.getOutputStream());
+			} else if (data instanceof BufferedImage) {
+				BufferedImage image = (BufferedImage) data;
+				String type = StringUtils.substringAfterLast(complexData.getTitle(), ".");
+				if (type == null) {
+					type = "jpg";
+				}
+				ImageIO.write(image, type, response.getOutputStream());
+			}
+
+			response.flushBuffer();
 		}
 		catch (Exception e) {
-			mimeType = "application/force-download"; //no mimeType for openmrs-api 1.11 and below
+			log.error("Error occurred while retrieving complex observation data: " + e.getMessage(), e);
+			throw new IllegalRequestException("An error occurred while processing the complex data stream.");
 		}
-		
-		response.setContentType(mimeType);
-		if (StringUtils.isNotBlank(complexData.getTitle())) {
-			response.setHeader("Content-Disposition", "attachment; filename=" + complexData.getTitle());
-		}
-		Object data = complexData.getData();
-		if (data instanceof byte[]) {
-			response.getOutputStream().write((byte[]) data);
-		} else if (data instanceof InputStream) {
-			IOUtils.copy((InputStream) data, response.getOutputStream());
-		} else if (data instanceof BufferedImage) {
-			//special case for ImageHandler
-			BufferedImage image = (BufferedImage) data;
-			String type = StringUtils.substringAfterLast(complexData.getTitle(), ".");
-			if (type == null) {
-				type = "jpg";
-			}
-			ImageIO.write(image, type, response.getOutputStream());
-		}
-		
-		response.flushBuffer();
 	}
 }

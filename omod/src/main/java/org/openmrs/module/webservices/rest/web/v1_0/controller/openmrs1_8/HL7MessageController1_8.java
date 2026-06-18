@@ -10,12 +10,11 @@
 package org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_8;
 
 import java.io.IOException;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.openmrs.annotation.Authorized;
 import org.openmrs.api.context.Context;
 import org.openmrs.hl7.HL7Source;
 import org.openmrs.module.webservices.rest.SimpleObject;
@@ -28,6 +27,8 @@ import org.openmrs.module.webservices.rest.web.response.ResponseException;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.MainResourceController;
 import org.openmrs.module.webservices.rest.web.v1_0.resource.openmrs1_8.HL7MessageResource1_8;
+import org.openmrs.module.webservices.rest.web.v1_0.dto.HL7RequestDto;
+import org.openmrs.util.PrivilegeConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
@@ -42,68 +43,70 @@ import ca.uhn.hl7v2.parser.GenericParser;
 import ca.uhn.hl7v2.parser.Parser;
 import ca.uhn.hl7v2.util.Terser;
 
-/**
- * Controller for {@link HL7MessageResource1_8}.
- * <p>
- * It is provided, because we want to support posting plain HL7 messages in addition to those in
- * json.
- */
 @Controller
 public class HL7MessageController1_8 extends BaseRestController {
-	
+
 	@Autowired
 	@Qualifier("mainResourceController")
 	MainResourceController mainResourceController;
-	
+
+	private final ObjectMapper objectMapper = new ObjectMapper();
+
 	@RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/hl7", method = RequestMethod.POST)
 	@ResponseBody
+	@Authorized({PrivilegeConstants.MANAGE_HL7_MESSAGES})
 	public Object create(@RequestBody String hl7, HttpServletRequest request, HttpServletResponse response)
-	        throws ResponseException, JsonParseException, JsonMappingException, IOException {
+			throws ResponseException {
 		RequestContext context = RestUtil.getRequestContext(request, response);
 		SimpleObject post = new SimpleObject();
-		
+
+		if (hl7 == null || hl7.trim().isEmpty()) {
+			throw new ConversionException("Request body cannot be empty");
+		}
+
 		if (hl7.trim().startsWith("{")) {
-			//hl7 is wrapped up in a json format
-			SimpleObject object = SimpleObject.parseJson(hl7);
-			hl7 = (String) object.get("hl7");
-			if (hl7 == null) {
-				throw new ConversionException("Missing the hl7 property");
+			try {
+				HL7RequestDto dto = objectMapper.readValue(hl7, HL7RequestDto.class);
+				if (dto == null || dto.getHl7() == null) {
+					throw new ConversionException("Missing the hl7 property in JSON payload");
+				}
+				hl7 = dto.getHl7();
+			} catch (IOException e) {
+				throw new ConversionException("Malformed or unreadable JSON request body.", e);
+			} catch (Exception e) {
+				throw new ConversionException("Invalid JSON format in HL7 request", e);
 			}
 		}
-		
+
 		try {
 			Parser parser = new GenericParser();
 			Message msg = parser.parse(hl7);
 			Terser terser = new Terser(msg);
-			
+
 			String source = terser.get("MSH-4");
 			String sourceKey = terser.get("MSH-10");
-			
+
 			post.add("source", source);
 			post.add("sourceKey", sourceKey);
 			post.add("data", hl7);
-			
+
 			HL7Source hl7Source = Context.getHL7Service().getHL7SourceByName(source);
 			if (hl7Source == null) {
 				throw new ConversionException("The " + source + " source was not recognized");
 			}
 		}
 		catch (HL7Exception e) {
-			throw new ConversionException(e.getMessage(), e);
+			throw new ConversionException("Failed to parse HL7 message: " + e.getMessage(), e);
 		}
-		
+
 		Object created = ((HL7MessageResource1_8) Context.getService(RestService.class).getResourceByName(
-		    RestConstants.VERSION_1 + "/hl7")).create(post, context);
+				RestConstants.VERSION_1 + "/hl7")).create(post, context);
 		return RestUtil.created(response, created);
 	}
-	
-	/**
-	 * Apparently if we provide a specific request mapping for POST, we also need to provide it for
-	 * GET, because otherwise Spring cannot find a more general match from
-	 * {@link MainResourceController}.
-	 */
+
 	@RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/hl7", method = RequestMethod.GET)
 	@ResponseBody
+	@Authorized({PrivilegeConstants.GET_HL7_SOURCE})
 	public SimpleObject get(HttpServletRequest request, HttpServletResponse response) throws ResponseException {
 		return mainResourceController.get("hl7", request, response);
 	}

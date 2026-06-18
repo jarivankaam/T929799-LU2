@@ -60,27 +60,33 @@ public abstract class MetadataDelegatingCrudResource<T extends OpenmrsMetadata> 
 		        .required("name");
 	}
 	
+	private static final RepresentationDescriptionFactory DESCRIPTIONS = RepresentationDescriptionFactory.builder()
+	        .forDefault(d -> {
+		        d.addProperty("uuid");
+		        d.addProperty("display");
+		        d.addProperty("name");
+		        d.addProperty("description");
+		        d.addProperty("retired");
+		        d.addSelfLink();
+		        d.addLink("full", ".?v=" + RestConstants.REPRESENTATION_FULL);
+	        })
+	        .forFull(d -> {
+		        d.addProperty("uuid");
+		        d.addProperty("display");
+		        d.addProperty("name");
+		        d.addProperty("description");
+		        d.addProperty("retired");
+		        d.addProperty("auditInfo");
+		        d.addSelfLink();
+	        })
+	        .build();
+
 	/**
 	 * @see org.openmrs.module.webservices.rest.web.resource.impl.BaseDelegatingConverter#getRepresentationDescription(org.openmrs.module.webservices.rest.web.representation.Representation)
 	 */
 	@Override
 	public DelegatingResourceDescription getRepresentationDescription(Representation rep) {
-		if (rep instanceof DefaultRepresentation || rep instanceof FullRepresentation) {
-			DelegatingResourceDescription description = new DelegatingResourceDescription();
-			description.addProperty("uuid");
-			description.addProperty("display");
-			description.addProperty("name");
-			description.addProperty("description");
-			description.addProperty("retired");
-			description.addSelfLink();
-			if (rep instanceof DefaultRepresentation) {
-				description.addLink("full", ".?v=" + RestConstants.REPRESENTATION_FULL);
-			} else {
-				description.addProperty("auditInfo");
-			}
-			return description;
-		}
-		return null;
+		return DESCRIPTIONS.get(rep);
 	}
 	
 	@RepHandler(RefRepresentation.class)

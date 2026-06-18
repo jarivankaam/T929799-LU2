@@ -9,6 +9,7 @@
  */
 package org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs2_0;
 
+import org.openmrs.annotation.Authorized;
 import org.openmrs.layout.address.AddressSupport;
 import org.openmrs.layout.address.AddressTemplate;
 import org.openmrs.module.webservices.rest.web.RestConstants;
@@ -19,6 +20,7 @@ import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestControlle
 import org.openmrs.module.webservices.rest.web.v1_0.helper.LayoutTemplateRepresentation;
 import org.openmrs.module.webservices.rest.web.v1_0.helper.LayoutTemplateProvider;
 import org.openmrs.serialization.SerializationException;
+import org.openmrs.util.PrivilegeConstants;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -28,50 +30,45 @@ import org.springframework.web.context.request.WebRequest;
 @Controller
 @RequestMapping(value = "/rest/" + RestConstants.VERSION_1 + "/addresstemplate")
 public class AddressTemplateController2_0 extends BaseRestController {
-	
+
 	@RequestMapping(method = RequestMethod.GET)
 	@ResponseBody
+	@Authorized({PrivilegeConstants.GET_PATIENTS})
 	public Object get(WebRequest request) throws SerializationException {
 		LayoutTemplateProvider<AddressTemplate> provider = new AddressTemplateProvider();
 		AddressTemplate addressTemplate = provider.getDefaultLayoutTemplate();
-		
+
 		Converter converter = new Converter();
 		return converter.asRepresentation(addressTemplate, Representation.DEFAULT);
 	}
-	
-	/**
-	 * Private utility class implementation of a LayoutTemplateProvider for type of AddressTemplate.
-	 */
+
 	private static class AddressTemplateProvider extends LayoutTemplateProvider<AddressTemplate> {
-		
+
 		public static final String LAYOUT_ADDRESS_DEFAULTS = "layout.address.defaults";
-		
+
 		public AddressTemplateProvider() {
 			super(AddressSupport.getInstance(), LAYOUT_ADDRESS_DEFAULTS);
 		}
-		
+
 		@Override
 		public AddressTemplate createInstance() {
 			return new AddressTemplate("");
 		}
 	}
-	
-	/**
-	 * Private utility class implementation of a Converter for an AddressTemplate.
-	 */
+
 	private static class Converter extends BaseDelegatingConverter<AddressTemplate> {
-		
+
 		@Override
 		public AddressTemplate newInstance(String type) {
 			return null;
 		}
-		
+
 		@Override
 		public AddressTemplate getByUniqueId(String codename) {
 			LayoutTemplateProvider<AddressTemplate> provider = new AddressTemplateProvider();
 			return provider.getLayoutTemplateByName(codename);
 		}
-		
+
 		@Override
 		public DelegatingResourceDescription getRepresentationDescription(Representation rep) {
 			return LayoutTemplateRepresentation.getRepresentationDescription(rep);

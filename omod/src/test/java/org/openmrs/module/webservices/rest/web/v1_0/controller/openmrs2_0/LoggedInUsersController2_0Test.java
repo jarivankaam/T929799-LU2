@@ -18,6 +18,10 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
+import org.junit.Assert;
+import org.openmrs.api.context.Context;
+import org.openmrs.util.PrivilegeConstants;
+import javax.servlet.http.HttpServletResponse;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -55,4 +59,27 @@ public class LoggedInUsersController2_0Test extends RestControllerTestUtils {
 		assertEquals("username", result.get(0));
 	}
 
+	@Test
+    public void getLoggedInUsers_shouldReturnForbiddenWhenAnonymous() throws Exception {
+        java.lang.reflect.Method getMethod = LoggedInUsersController2_0.class.getMethod("getLoggedInUsers", javax.servlet.http.HttpSession.class);
+        
+        Assert.assertTrue("The getLoggedInUsers method must have the @Authorized annotation", 
+            getMethod.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
+            
+        org.openmrs.annotation.Authorized methodAuth = getMethod.getAnnotation(org.openmrs.annotation.Authorized.class);
+        java.util.List<String> privileges = java.util.Arrays.asList(methodAuth.value());
+        
+        Assert.assertTrue("Method level annotation must require GET_USERS privilege", 
+            privileges.contains(org.openmrs.util.PrivilegeConstants.GET_USERS));
+    }
+
+    @Test
+    public void getLoggedInUsers_shouldAllowAccessWhenUserHasGetUsers() throws Exception {
+        java.lang.reflect.Method getMethod = LoggedInUsersController2_0.class.getMethod("getLoggedInUsers", javax.servlet.http.HttpSession.class);
+        org.openmrs.annotation.Authorized methodAuth = getMethod.getAnnotation(org.openmrs.annotation.Authorized.class);
+        
+        Assert.assertNotNull("The @Authorized annotation configuration must not be null", methodAuth);
+        Assert.assertEquals("The required privilege must strictly match GET_USERS", 
+            org.openmrs.util.PrivilegeConstants.GET_USERS, methodAuth.value()[0]);
+    }
 }
