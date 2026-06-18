@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_8.ModuleActionController1_8Test
 -------------------------------------------------------------------------------
-Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.484 s -- in org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_8.ModuleActionController1_8Test
+Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.199 s -- in org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_8.ModuleActionController1_8Test

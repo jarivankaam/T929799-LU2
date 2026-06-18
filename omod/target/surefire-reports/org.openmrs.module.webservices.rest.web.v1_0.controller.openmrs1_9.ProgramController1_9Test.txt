@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_9.ProgramController1_9Test
 -------------------------------------------------------------------------------
-Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.142 s -- in org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_9.ProgramController1_9Test
+Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.155 s -- in org.openmrs.module.webservices.rest.web.v1_0.controller.openmrs1_9.ProgramController1_9Test

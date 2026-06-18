@@ -4,37 +4,31 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<!-- Inherit from the webservices.rest parent so we pick up the -->
-	<!-- jacoco-maven-plugin version and all shared config.          -->
 	<parent>
 		<groupId>org.openmrs.module</groupId>
 		<artifactId>webservices.rest</artifactId>
 		<version>3.2.0</version>
 	</parent>
 
-	<artifactId>webservices.rest.report-aggregate</artifactId>
+	<artifactId>webservices.rest-report-aggregate</artifactId>
 	<name>Rest Web Services - Coverage Aggregate</name>
 	<description>
 		Code-free module that aggregates JaCoCo execution data from the other
 		modules into a single jacoco.xml so SonarQube sees cross-module coverage
-		(e.g. tests in omod that exercise code in omod-common).
+		(tests in omod that exercise code in omod-common).
 	</description>
 
-	<!-- No sources, but keep packaging as jar so the report-aggregate goal -->
-	<!-- has a normal lifecycle to bind to. The produced jar is empty/ignored. -->
 	<packaging>jar</packaging>
 
 	<properties>
-		<!-- This module has no source of its own; don't let Sonar analyse it -->
-		<!-- as a project. Its only purpose is producing the aggregate report. -->
+		<!-- No source of its own: skip Sonar analysis of this module... -->
 		<sonar.skip>true</sonar.skip>
+		<!-- ...and skip the inherited license + formatter plugins, which expect
+		     files (license-header.txt) that don't exist in this lean module. -->
+		<license.skip>true</license.skip>
+		<format.skip>true</format.skip>
 	</properties>
 
-	<!-- ============================================================ -->
-	<!-- The dependencies ARE the configuration. report-aggregate walks -->
-	<!-- these dependencies, finds each module's jacoco.exec + classes + -->
-	<!-- sources, and merges them. List every module you want counted.  -->
-	<!-- ============================================================ -->
 	<dependencies>
 		<dependency>
 			<groupId>${project.groupId}</groupId>
@@ -46,13 +40,6 @@
 			<artifactId>webservices.rest-omod</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-		<!--
-			integration-tests has NO main sources (it's a pure test module),
-			so there is nothing for report-aggregate to attribute coverage to.
-			Leave it out. If you later want its tests to count toward coverage
-			of omod/omod-common classes, that requires wiring prepare-agent
-			into integration-tests separately — out of scope here.
-		-->
 	</dependencies>
 
 	<build>
@@ -60,7 +47,6 @@
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
-				<!-- version inherited from parent pluginManagement (0.8.13) -->
 				<executions>
 					<execution>
 						<id>report-aggregate</id>
@@ -69,8 +55,6 @@
 							<goal>report-aggregate</goal>
 						</goals>
 						<configuration>
-							<!-- Output: target/site/jacoco-aggregate/jacoco.xml -->
-							<!-- (this is the standard location Sonar expects)     -->
 							<outputDirectory>${project.build.directory}/site/jacoco-aggregate</outputDirectory>
 						</configuration>
 					</execution>
