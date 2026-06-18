@@ -89,16 +89,20 @@ public class LocaleAndThemeConfigurationController2_0Test extends RestController
 
     @Test
     public void updateCurrentConfiguration_shouldReturnForbiddenWhenAnonymous() throws Exception {
-        java.lang.reflect.Method postMethod = LocaleAndThemeConfigurationController2_0.class.getMethod("updateCurrentConfiguration", org.openmrs.module.webservices.rest.web.v1_0.wrapper.LocaleAndThemeConfiguration.class);
-        
-        Assert.assertTrue("The updateCurrentConfiguration method must have the @Authorized annotation", 
-            postMethod.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
-            
+        // Pas het argument aan naar de DTO klasse:
+        java.lang.reflect.Method postMethod = LocaleAndThemeConfigurationController2_0.class.getMethod(
+                "updateCurrentConfiguration",
+                org.openmrs.module.webservices.rest.web.v1_0.dto.LocaleAndThemeConfigurationRequestDto.class
+        );
+
+        Assert.assertTrue("The updateCurrentConfiguration method must have the @Authorized annotation",
+                postMethod.isAnnotationPresent(org.openmrs.annotation.Authorized.class));
+
         org.openmrs.annotation.Authorized methodAuth = postMethod.getAnnotation(org.openmrs.annotation.Authorized.class);
         java.util.List<String> privileges = java.util.Arrays.asList(methodAuth.value());
-        
-        Assert.assertTrue("POST method must require VIEW_ADMIN_FUNCTIONS privilege", 
-            privileges.contains(org.openmrs.util.PrivilegeConstants.VIEW_ADMIN_FUNCTIONS));
+
+        Assert.assertTrue("POST method must require VIEW_ADMIN_FUNCTIONS privilege",
+                privileges.contains(org.openmrs.util.PrivilegeConstants.VIEW_ADMIN_FUNCTIONS));
     }
 
     private String getURI() {

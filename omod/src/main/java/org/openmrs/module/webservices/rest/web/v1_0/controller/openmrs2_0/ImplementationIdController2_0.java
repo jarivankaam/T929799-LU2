@@ -18,6 +18,7 @@ import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.representation.Representation;
 import org.openmrs.module.webservices.rest.web.response.IllegalRequestException;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
+import org.openmrs.module.webservices.rest.web.v1_0.dto.ImplementationIdRequestDto;
 import org.openmrs.util.PrivilegeConstants;
 import org.openmrs.validator.ImplementationIdValidator;
 import org.springframework.http.HttpStatus;
@@ -47,8 +48,16 @@ public class ImplementationIdController2_0 extends BaseRestController {
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseStatus(HttpStatus.OK)
 	@Authorized({PrivilegeConstants.MANAGE_IMPLEMENTATION_ID})
-	public void updateCurrentConfiguration(@RequestBody ImplementationId implementationId) {
+	public void updateCurrentConfiguration(@RequestBody ImplementationIdRequestDto body) {
 		AdministrationService administrationService = Context.getAdministrationService();
+
+		ImplementationId implementationId = new ImplementationId();
+		if (body != null) {
+			implementationId.setImplementationId(body.getImplementationId());
+			implementationId.setDescription(body.getDescription());
+			implementationId.setPassphrase(body.getPassphrase());
+			implementationId.setName(body.getName());
+		}
 
 		BindException exceptions = new BindException(implementationId, "");
 		new ImplementationIdValidator().validate(implementationId, exceptions);
@@ -59,5 +68,4 @@ public class ImplementationIdController2_0 extends BaseRestController {
 
 		administrationService.setImplementationId(implementationId);
 	}
-
 }

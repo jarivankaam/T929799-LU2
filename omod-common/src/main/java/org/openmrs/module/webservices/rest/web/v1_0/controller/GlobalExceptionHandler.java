@@ -23,6 +23,33 @@ public class GlobalExceptionHandler {
 
     private final Log log = LogFactory.getLog(getClass());
 
+    @ExceptionHandler({IllegalArgumentException.class, RuntimeException.class})
+    @ResponseBody
+    public SimpleObject handleRuntimeException(Exception ex, HttpServletResponse response) {
+        log.warn("Runtime/Validation exception intercepted: " + ex.getMessage());
+
+        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+
+        SimpleObject cleanErrorResponse = new SimpleObject();
+        SimpleObject errorDetails = new SimpleObject();
+
+        errorDetails.put("message", "Bad Request");
+        errorDetails.put("code", "400");
+
+
+        String detailMessage = "Invalid request parameters.";
+        if (StringUtils.isNotEmpty(ex.getMessage()) && !ex.getMessage().contains("org.openmrs")) {
+            detailMessage = ex.getMessage();
+        } else if (ex.getMessage() != null && ex.getMessage().contains("cannot be null or blank")) {
+            detailMessage = "One or more required fields are empty or invalid.";
+        }
+
+        errorDetails.put("detail", detailMessage);
+
+        cleanErrorResponse.put("error", errorDetails);
+        return cleanErrorResponse;
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseBody
     public SimpleObject handleAllUnhandledExceptions(Exception ex, HttpServletResponse response) {
