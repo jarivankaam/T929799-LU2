@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<!-- Inherit from the webservices.rest parent so we pick up the -->
+	<!-- jacoco-maven-plugin version and all shared config.          -->
+	<parent>
+		<groupId>org.openmrs.module</groupId>
+		<artifactId>webservices.rest</artifactId>
+		<version>3.2.0</version>
+	</parent>
+
+	<artifactId>webservices.rest.report-aggregate</artifactId>
+	<name>Rest Web Services - Coverage Aggregate</name>
+	<description>
+		Code-free module that aggregates JaCoCo execution data from the other
+		modules into a single jacoco.xml so SonarQube sees cross-module coverage
+		(e.g. tests in omod that exercise code in omod-common).
+	</description>
+
+	<!-- No sources, but keep packaging as jar so the report-aggregate goal -->
+	<!-- has a normal lifecycle to bind to. The produced jar is empty/ignored. -->
+	<packaging>jar</packaging>
+
+	<properties>
+		<!-- This module has no source of its own; don't let Sonar analyse it -->
+		<!-- as a project. Its only purpose is producing the aggregate report. -->
+		<sonar.skip>true</sonar.skip>
+	</properties>
+
+	<!-- ============================================================ -->
+	<!-- The dependencies ARE the configuration. report-aggregate walks -->
+	<!-- these dependencies, finds each module's jacoco.exec + classes + -->
+	<!-- sources, and merges them. List every module you want counted.  -->
+	<!-- ============================================================ -->
+	<dependencies>
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>webservices.rest.omod-common</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>webservices.rest.omod</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<!--
+			If you also want integration-test coverage folded in, uncomment.
+			Leave commented if integration-tests is only built under its profile.
+		-->
+		<!--
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>webservices.rest.integration-tests</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		-->
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<!-- version inherited from parent pluginManagement (0.8.13) -->
+				<executions>
+					<execution>
+						<id>report-aggregate</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report-aggregate</goal>
+						</goals>
+						<configuration>
+							<!-- Output: target/site/jacoco-aggregate/jacoco.xml -->
+							<!-- (this is the standard location Sonar expects)     -->
+							<outputDirectory>${project.build.directory}/site/jacoco-aggregate</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>
