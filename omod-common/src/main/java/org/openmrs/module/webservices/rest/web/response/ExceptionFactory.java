@@ -111,7 +111,7 @@ public final class ExceptionFactory {
 	public static ResponseException forStatus(HttpStatus status, String message, Throwable cause) {
 		switch (status) {
 			case NOT_FOUND:
-				return new ObjectNotFoundException(message);
+				return new ObjectNotFoundException(message, cause);
 			case BAD_REQUEST:
 				return new IllegalRequestException(message, cause);
 			case INTERNAL_SERVER_ERROR:
