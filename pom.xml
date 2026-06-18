@@ -38,6 +38,9 @@
 		<module>omod-common</module>
 		<module>omod</module>
 		<module>integration-tests</module>
+		<!-- MUST be last: aggregates the .exec data produced by the modules -->
+		<!-- above, so they have to build first. -->
+		<module>report-aggregate</module>
 	</modules>
 
 	<properties>
@@ -54,6 +57,22 @@
 		<apacheTomcatVersion>6.0.53</apacheTomcatVersion>
 		<javaxVersion>4.0.1</javaxVersion>
 		<jacksonVersion>2.19.1</jacksonVersion>
+
+		<!-- ============================================================ -->
+		<!-- SonarQube configuration                                       -->
+		<!-- ============================================================ -->
+		<!-- Single aggregated JaCoCo XML, produced by the report-aggregate -->
+		<!-- module. This is the canonical path from the official Sonar docs. -->
+		<!-- ${maven.multiModuleProjectDirectory} resolves to the reactor root -->
+		<!-- regardless of which module Sonar is currently analysing. -->
+		<sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/report-aggregate/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+		<!-- Per-module surefire results so Sonar shows test counts -->
+		<sonar.junit.reportPaths>${project.basedir}/target/surefire-reports</sonar.junit.reportPaths>
+		<!-- Tell Sonar to read coverage rather than try to run it -->
+		<sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+		<sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
+		<!-- jacoco.exec destination, kept consistent across modules -->
+		<sonar.jacoco.reportPath>${project.basedir}/target/jacoco.exec</sonar.jacoco.reportPath>
 	</properties>
 
 	<!-- TODO: combine/simplify the "dependencyManagement" and "dependency" sections into a single "dependency" section and test/remove any unneeded dependencies -->
@@ -451,24 +470,6 @@
 					</configuration>
 				</plugin>
 				<plugin>
-					<groupId>org.jacoco</groupId>
-					<artifactId>jacoco-maven-plugin</artifactId>
-					<version>0.8.13</version>
-					<configuration>
-						<includes>
-							<include>org/openmrs/**</include>
-						</includes>
-					</configuration>
-					<executions>
-						<execution>
-							<id>prepare-agent</id>
-							<goals>
-								<goal>prepare-agent</goal>
-							</goals>
-						</execution>
-					</executions>
-				</plugin>
-				<plugin>
 					<groupId>org.eluder.coveralls</groupId>
 					<artifactId>coveralls-maven-plugin</artifactId>
 					<version>4.2.0</version>
@@ -523,6 +524,43 @@
 			    <groupId>org.apache.maven.plugins</groupId>
 			    <artifactId>maven-surefire-plugin</artifactId>
 			    <version>3.5.3</version>
+			</plugin>
+
+			<!-- ============================================================ -->
+			<!-- JaCoCo: now ACTIVE (not just pluginManagement) and produces   -->
+			<!-- the XML report SonarQube needs. prepare-agent wires the agent -->
+			<!-- into surefire; report writes per-module XML during 'test'.    -->
+			<!-- ============================================================ -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.8.13</version>
+				<configuration>
+					<!-- Use your actual module package here. org/openmrs/** is broad; -->
+					<!-- if your code is under org.openmrs.module.webservices.rest,    -->
+					<!-- this still matches. Narrow it if you want tighter scope.       -->
+					<includes>
+						<include>org/openmrs/**</include>
+					</includes>
+				</configuration>
+				<executions>
+					<!-- 1) Hook the JaCoCo agent into the JVM that runs the tests -->
+					<execution>
+						<id>prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<!-- 2) Generate the per-module XML report AFTER tests run.     -->
+					<!--    This is the file Sonar reads. Without it: coverage = 0%. -->
+					<execution>
+						<id>report</id>
+						<phase>test</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>
