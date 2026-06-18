@@ -38,24 +38,20 @@
 	<dependencies>
 		<dependency>
 			<groupId>${project.groupId}</groupId>
-			<artifactId>webservices.rest.omod-common</artifactId>
+			<artifactId>webservices.rest-omod-common</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>${project.groupId}</groupId>
-			<artifactId>webservices.rest.omod</artifactId>
+			<artifactId>webservices.rest-omod</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<!--
-			If you also want integration-test coverage folded in, uncomment.
-			Leave commented if integration-tests is only built under its profile.
-		-->
-		<!--
-		<dependency>
-			<groupId>${project.groupId}</groupId>
-			<artifactId>webservices.rest.integration-tests</artifactId>
-			<version>${project.version}</version>
-		</dependency>
+			integration-tests has NO main sources (it's a pure test module),
+			so there is nothing for report-aggregate to attribute coverage to.
+			Leave it out. If you later want its tests to count toward coverage
+			of omod/omod-common classes, that requires wiring prepare-agent
+			into integration-tests separately — out of scope here.
 		-->
 	</dependencies>
 
