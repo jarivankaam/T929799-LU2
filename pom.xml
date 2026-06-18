@@ -38,9 +38,6 @@
 		<module>omod-common</module>
 		<module>omod</module>
 		<module>integration-tests</module>
-		<!-- MUST be last: aggregates the .exec data produced by the modules -->
-		<!-- above, so they have to build first. -->
-		<module>report-aggregate</module>
 	</modules>
 
 	<properties>
@@ -61,18 +58,17 @@
 		<!-- ============================================================ -->
 		<!-- SonarQube configuration                                       -->
 		<!-- ============================================================ -->
-		<!-- Single aggregated JaCoCo XML, produced by the report-aggregate -->
-		<!-- module. This is the canonical path from the official Sonar docs. -->
-		<!-- ${maven.multiModuleProjectDirectory} resolves to the reactor root -->
-		<!-- regardless of which module Sonar is currently analysing. -->
-		<sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/report-aggregate/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+		<!-- Per-module aggregate report. Each module runs report-aggregate -->
+		<!-- (see jacoco plugin below) and writes its own jacoco.xml that    -->
+		<!-- ALSO includes coverage for the modules it depends on. The path  -->
+		<!-- is resolved relative to whichever module Sonar is scanning, so  -->
+		<!-- the .java files referenced in the report are in scope and match. -->
+		<!-- This is the fix for "File X.java not found in project sources".  -->
+		<sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 		<!-- Per-module surefire results so Sonar shows test counts -->
 		<sonar.junit.reportPaths>${project.basedir}/target/surefire-reports</sonar.junit.reportPaths>
 		<!-- Tell Sonar to read coverage rather than try to run it -->
 		<sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
-		<sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
-		<!-- jacoco.exec destination, kept consistent across modules -->
-		<sonar.jacoco.reportPath>${project.basedir}/target/jacoco.exec</sonar.jacoco.reportPath>
 	</properties>
 
 	<!-- TODO: combine/simplify the "dependencyManagement" and "dependency" sections into a single "dependency" section and test/remove any unneeded dependencies -->
@@ -527,18 +523,19 @@
 			</plugin>
 
 			<!-- ============================================================ -->
-			<!-- JaCoCo: now ACTIVE (not just pluginManagement) and produces   -->
-			<!-- the XML report SonarQube needs. prepare-agent wires the agent -->
-			<!-- into surefire; report writes per-module XML during 'test'.    -->
+			<!-- JaCoCo: ACTIVE in every module. prepare-agent wires the agent -->
+			<!-- into surefire; report writes this module's own XML; and       -->
+			<!-- report-aggregate writes an XML that ALSO contains coverage for -->
+			<!-- the modules this one depends on. omod depends on omod-common,  -->
+			<!-- so omod's aggregate covers both, and Sonar matches it against  -->
+			<!-- omod's sources when it scans omod. This is the multi-module    -->
+			<!-- fix: the aggregate is produced and read per-module, in scope.  -->
 			<!-- ============================================================ -->
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
 				<version>0.8.13</version>
 				<configuration>
-					<!-- Use your actual module package here. org/openmrs/** is broad; -->
-					<!-- if your code is under org.openmrs.module.webservices.rest,    -->
-					<!-- this still matches. Narrow it if you want tighter scope.       -->
 					<includes>
 						<include>org/openmrs/**</include>
 					</includes>
@@ -551,13 +548,23 @@
 							<goal>prepare-agent</goal>
 						</goals>
 					</execution>
-					<!-- 2) Generate the per-module XML report AFTER tests run.     -->
-					<!--    This is the file Sonar reads. Without it: coverage = 0%. -->
+					<!-- 2) Per-module report (this module's own classes only) -->
 					<execution>
 						<id>report</id>
 						<phase>test</phase>
 						<goals>
 							<goal>report</goal>
+						</goals>
+					</execution>
+					<!-- 3) Aggregate report: this module + the modules it       -->
+					<!--    depends on. Written to target/site/jacoco-aggregate/  -->
+					<!--    jacoco.xml, which is the path Sonar reads (see the    -->
+					<!--    sonar.coverage.jacoco.xmlReportPaths property above).  -->
+					<execution>
+						<id>report-aggregate</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report-aggregate</goal>
 						</goals>
 					</execution>
 				</executions>
