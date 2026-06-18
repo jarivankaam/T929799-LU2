@@ -58,13 +58,15 @@
 		<!-- ============================================================ -->
 		<!-- SonarQube configuration                                       -->
 		<!-- ============================================================ -->
-		<!-- Per-module aggregate report. Each module runs report-aggregate -->
-		<!-- (see jacoco plugin below) and writes its own jacoco.xml that    -->
-		<!-- ALSO includes coverage for the modules it depends on. The path  -->
-		<!-- is resolved relative to whichever module Sonar is scanning, so  -->
-		<!-- the .java files referenced in the report are in scope and match. -->
-		<!-- This is the fix for "File X.java not found in project sources".  -->
-		<sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+		<!-- Both modules' aggregate reports, as a fixed comma-separated   -->
+		<!-- list read by EVERY module's Sonar sensor. omod's tests cover   -->
+		<!-- omod-common's classes, so that coverage lives in omod's report. -->
+		<!-- By giving omod-common's sensor BOTH reports, the coverage of    -->
+		<!-- omod-common classes (from omod's tests) attaches while          -->
+		<!-- omod-common's own sources are in scope. Paths are root-relative -->
+		<!-- via maven.multiModuleProjectDirectory so they resolve the same  -->
+		<!-- in every module. Fixes "File X.java not found in project sources". -->
+		<sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/omod/target/site/jacoco-aggregate/jacoco.xml,${maven.multiModuleProjectDirectory}/omod-common/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 		<!-- Per-module surefire results so Sonar shows test counts -->
 		<sonar.junit.reportPaths>${project.basedir}/target/surefire-reports</sonar.junit.reportPaths>
 		<!-- Tell Sonar to read coverage rather than try to run it -->
